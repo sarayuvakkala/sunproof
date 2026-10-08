@@ -8,7 +8,8 @@ Parameters:
     Default: "*"
   SenderEmail:
     Type: String
-    Description: SES-verified sender address
+    Default: ""
+    Description: SES-verified sender address (set at deploy time, not committed)
 
 Globals:
   Function:
@@ -70,13 +71,22 @@ Resources:
       Events:
         Verdict:
           Type: HttpApi
-          Properties: {ApiId: !Ref HttpApi, Path: /homes/{homeId}/verdict, Method: GET}
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: "/homes/{homeId}/verdict"
+            Method: GET
         Voice:
           Type: HttpApi
-          Properties: {ApiId: !Ref HttpApi, Path: /homes/{homeId}/voice, Method: POST}
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: "/homes/{homeId}/voice"
+            Method: POST
         Accuracy:
           Type: HttpApi
-          Properties: {ApiId: !Ref HttpApi, Path: /accuracy, Method: GET}
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: "/accuracy"
+            Method: GET
     Metadata:
       DockerContext: ..
       Dockerfile: backend/Dockerfile
