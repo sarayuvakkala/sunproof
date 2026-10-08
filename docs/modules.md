@@ -32,12 +32,15 @@ The accuracy test **must** call this same function, so the published accuracy is
   - trip or step: flagged within 2 days of the start
   - dust: flagged within 7 days of the loss crossing 5%
 - **False alarm:** a flagged day on an inverter with no injected fault at that time.
-- **Tune** thresholds on Plant 1 only. **Report** on Plant 2.
+- **Data finding (Thu):** Plant 1 tracks its sunlight sensor closely (daily ratio spread ~3.6%). Plant 2 swings ~27% on **every** inverter, so its sensor or plant is unreliable.
+- **Split:** Plant 1 inverters sorted by `SOURCE_KEY`. Even positions **tune** the thresholds, odd positions are the **held-out test**. Report test numbers only.
+- **Plant 2:** run the same detector on its original data and report it separately as "messy real-world plant" (flag rate + note), not in the headline accuracy.
+- Plant 1 `DC_POWER` is 10× too large (known dataset issue). Use `AC_POWER` only. Plant 1 dates are day-first (`dayfirst=True`).
 - Also run on the **original** data and list inverters with a low median ratio ("real underperformers").
 - **Out:** `accuracy/report.json`:
 ```json
 {"dataset": "Kaggle Solar Power Generation Data (2 Indian plants, 34 days)",
- "tuned_on": "plant_1", "tested_on": "plant_2", "seed": 42,
+ "tuned_on": "plant_1 even inverters", "tested_on": "plant_1 odd inverters", "seed": 42,
  "by_kind": {"trip": {"injected": 0, "caught": 0, "missed": 0},
              "step": {"injected": 0, "caught": 0, "missed": 0},
              "dust": {"injected": 0, "caught": 0, "missed": 0}},
@@ -47,9 +50,9 @@ The accuracy test **must** call this same function, so the published accuracy is
 - **Done when:** `python -m accuracy.run_kaggle` writes the file deterministically.
 
 ## M3. Demo household: `accuracy/make_demo_household.py`  (partner)
-- Pick one **clean** Plant 2 inverter (high, steady ratio). Scale its daily kWh by `3.0 / inverter_kw` (estimate `inverter_kw` from its peak AC power).
+- Use Plant 1 inverter `YxYtjZvoooNbGkE` (steadiest: daily ratio spread 3.2%), plus Plant 1's weather sensor for its sunlight. Scale its daily kWh by `3.0 / inverter_kw` (estimate `inverter_kw` from its peak AC power).
 - Shift the dates so the series ends "yesterday" (it's a replay; label it so).
-- **Out:** `data/demo_household.csv` with columns `date, actual_kwh`, plus `data/demo_household.json` with `{kw: 3, lat: 28.61, lon: 77.21, tilt: 20, azimuth: 180, tariff: 8, label: "Demo household built from public plant data, not a real home"}`.
+- **Out:** `data/demo_household.csv` with columns `date, actual_kwh, poa_kwh_m2, temp_module_mean` (the expected model needs the same sky as the actual output, so this is a replay, not live weather), plus `data/demo_household.json` with `{kw: 3, lat: 28.61, lon: 77.21, tilt: 20, azimuth: 180, tariff: 8, label: "Demo household built from public plant data, not a real home"}`.
 - **Sharma ji variant:** the same series with a 20% step drop over the last 21 days → `data/demo_sharma.csv`.
 
 ## M4. Clean or skip: `engine/clean_or_skip.py`  (partner)
