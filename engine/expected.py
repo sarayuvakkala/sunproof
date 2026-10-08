@@ -62,7 +62,19 @@ def from_poa(system: System, measured: pd.DataFrame) -> pd.DataFrame:
     return _daily_band(_ac_kw(system, measured["poa_wm2"], measured["temp_module"]))
 
 
-OPEN_METEO = "https://api.open-meteo.com/v1/forecast"
+def from_daily_poa(system: System, daily: pd.DataFrame) -> pd.DataFrame:
+    """daily: date index, columns poa_kwh_m2 (daily sunlight on the panel), temp_module (°C, sun-weighted).
+
+    Daily-resolution version of the PVWatts chain, for stored replay data.
+    """
+    temp_factor = 1 + GAMMA_PDC * (daily["temp_module"] - 25)
+    p50 = system.kw * daily["poa_kwh_m2"] * temp_factor * (1 - SYSTEM_LOSSES_PCT / 100) * 0.96
+    out = pd.DataFrame({"p10": p50 * BAND_LOW, "p50": p50, "p90": p50 * BAND_HIGH}, index=pd.to_datetime(daily.index))
+    out.index.name = "date"
+    return out
+
+
+OPEN_METEO ="https://api.open-meteo.com/v1/forecast"
 
 
 def fetch_open_meteo(system: System, past_days: int = 31, forecast_days: int = 1) -> pd.DataFrame:

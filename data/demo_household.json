@@ -1,0 +1,13 @@
+{
+  "kw": 3.0,
+  "lat": 28.61,
+  "lon": 77.21,
+  "tilt": 20,
+  "azimuth": 180,
+  "tariff": 8,
+  "mode": "replay",
+  "isDemo": true,
+  "label": "Demo household built from public plant data, not a real home",
+  "source": "Kaggle Solar Power Generation Data, Plant 1 inverter YxYtjZvoooNbGkE",
+  "sharma_variant": "last 21 days x 0.8"
+}
