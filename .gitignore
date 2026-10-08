@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+# SAM
+.aws-sam/
+samconfig.local.toml
+# Node
+node_modules/
+dist/
+# Data (raw datasets live outside the repo, see README)
+data/raw/
+*.zip
+# Secrets
+.env
+.env.*
+kaggle.json
+.DS_Store
