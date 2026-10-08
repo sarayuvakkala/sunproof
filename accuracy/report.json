@@ -1,0 +1,61 @@
+{
+  "dataset": "Kaggle Solar Power Generation Data (2 Indian plants, 34 days, 22 inverters each)",
+  "method": "Known faults injected blind; the product's detector (engine.detect) scored against them.",
+  "seeds": 20,
+  "tuned_on": "Plant 1, 11 inverters (even positions)",
+  "tested_on": "Plant 1, 11 held-out inverters (odd positions)",
+  "thresholds": {
+    "trip_ratio": 0.1,
+    "shortfall_ratio": 0.88,
+    "dust_ratio": 0.95,
+    "dust_slope": -0.002,
+    "min_expected_kwh": 0.05
+  },
+  "catch_rules": {
+    "trip": "within 2 days",
+    "step_20pct": "within 2 days",
+    "dust": "within 7 days of loss crossing 5%"
+  },
+  "by_kind": {
+    "trip": {
+      "injected": 60,
+      "caught": 60,
+      "missed": 0
+    },
+    "step": {
+      "injected": 40,
+      "caught": 40,
+      "missed": 0
+    },
+    "dust": {
+      "injected": 38,
+      "caught": 30,
+      "missed": 8
+    }
+  },
+  "dust_below_5pct": {
+    "injected": 2,
+    "flagged": 0
+  },
+  "false_alarms": {
+    "clean_inverter_days": 5561,
+    "flagged": 31,
+    "rate": 0.0056
+  },
+  "real_underperformers_plant_1": [
+    {
+      "plant": 1,
+      "source_key": "bvBOhCH3iADSZry",
+      "median_vs_peers": 0.919,
+      "days_below_90pct_of_peers": 3
+    },
+    {
+      "plant": 1,
+      "source_key": "1BY6WEcLGh8j5v7",
+      "median_vs_peers": 0.93,
+      "days_below_90pct_of_peers": 2
+    }
+  ],
+  "plant_2_note": "Plant 2 output swings ~27% around its own sunlight sensor on every inverter, so it is not used for headline accuracy.",
+  "plant_2_flag_rate_original": 0.233
+}
