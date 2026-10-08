@@ -8,6 +8,7 @@ from pathlib import Path
 
 import boto3
 import pandas as pd
+from botocore.config import Config
 from boto3.dynamodb.conditions import Key
 
 from engine import expected as E
@@ -15,7 +16,10 @@ from engine.verdict import build_verdict
 
 TABLE = boto3.resource("dynamodb").Table(os.environ["TABLE"])
 BUCKET = os.environ["BUCKET"]
-s3 = boto3.client("s3")
+REGION = os.environ.get("AWS_REGION", "ap-south-1")
+# Regional endpoint + SigV4 so presigned links work for a Mumbai bucket without a redirect.
+s3 = boto3.client("s3", region_name=REGION, endpoint_url=f"https://s3.{REGION}.amazonaws.com",
+                  config=Config(signature_version="s3v4", s3={"addressing_style": "virtual"}))
 polly = boto3.client("polly")
 
 REPORT = Path(__file__).resolve().parent.parent / "accuracy" / "report.json"
