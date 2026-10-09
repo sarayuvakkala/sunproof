@@ -50,7 +50,7 @@ interface Ctx {
   remoteFix: boolean
   busy: boolean
   toast: string | null
-  send: () => Promise<void>
+  send: (hold?: Promise<unknown>) => Promise<boolean>
   instReply: (a: InstallerAction) => Promise<void>
   scenarioGo: (k: ScenarioKey) => Promise<void>
   scenarioNow: ScenarioKey | null
@@ -177,16 +177,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (issue.status === 'sent' || issue.status === 'disputed') setRemoteFix(false)
   }, [issue?.status, issue?.issueId, v?.isDemo, replay])
 
-  const send = useCallback(async () => {
+  // `hold` lets the send animation finish before the screen switches to "Sent".
+  const send = useCallback(async (hold?: Promise<unknown>) => {
     setBusy(true)
     try {
       plan.current = 'fixed'
       setScenarioNow(null)
       const r = await sendIssue(HOME_ID, true)
+      if (hold) await hold
       setIssueId(r.issueId)
       await loadIssue(r.issueId)
+      return true
     } catch (e) {
       flash((e as Error).message || 'Could not send. Try again.')
+      return false
     } finally { setBusy(false) }
   }, [loadIssue, flash])
 

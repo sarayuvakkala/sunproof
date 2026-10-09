@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import type { InstallerAction, Issue, Verdict } from '../api'
 import { fmtTime } from './calc'
 import { Ic } from './ic'
-import { Slide } from './Slide'
+import { SendButton } from './SendFly'
 import { useApp, type ScenarioKey, type View } from './state'
 import { Ticker } from './Ticker'
 import { Card } from './ui'
@@ -134,10 +134,12 @@ function Evidence({ v }: { v: Verdict }) {
 }
 
 export function InstallerTab() {
-  const { v, issue, view, t, lang, send, instReply, scenarioGo, scenarioNow, busy, remoteFix, visitPhase } = useApp()
+  const { v, issue, view, t, lang, instReply, scenarioGo, scenarioNow, busy, remoteFix, visitPhase } = useApp()
   const nav = useNavigate()
   const [sheet, setSheet] = useState(false)
   const [copied, setCopied] = useState(false)
+  const cardRef = useRef<HTMLDivElement>(null)
+  const avatarRef = useRef<HTMLDivElement>(null)
 
   if (!v) return <Card style={{ color: 'var(--mut)' }}>{t('Loading…')}</Card>
   const at = (e: string) => issue?.timeline.find((x) => x.event === e)
@@ -156,7 +158,7 @@ export function InstallerTab() {
     <>
       <Card style={{ padding: 0 }}>
         <div className="ban" />
-        <div className="av"><b>TI</b><span className="vf">✓</span></div>
+        <div className="av" ref={avatarRef}><b>TI</b><span className="vf">✓</span></div>
         <div style={{ padding: '32px 16px 14px' }}>
           <div style={{ fontSize: 17, fontWeight: 800 }}>{t('Test installer')}</div>
           <div className="sm mut" style={{ margin: '2px 0 10px' }}>{t('Your installer · fitted your 3 kW system in 2025')}</div>
@@ -176,11 +178,11 @@ export function InstallerTab() {
 
       {view === 'idle' && (canSend ? (
         <>
-          <Evidence v={v} />
+          <div ref={cardRef}><Evidence v={v} /></div>
           <Card style={{ padding: 16 }} delay={0.2}>
             <div className="h">{t('Ready when you are')}</div>
-            <div className="sm mut" style={{ margin: '3px 0 14px' }}>{t('Nothing is sent until you slide. Watch the sun.')}</div>
-            <Slide onSend={send} />
+            <div className="sm mut" style={{ margin: '3px 0 14px' }}>{t('Nothing is sent until you press the button.')}</div>
+            <SendButton cardRef={cardRef} avatarRef={avatarRef} />
           </Card>
         </>
       ) : (

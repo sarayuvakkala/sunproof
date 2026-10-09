@@ -226,3 +226,21 @@
 .sp .sprout .st{stroke-dasharray:1;stroke-dashoffset:1}.sp .sprout .lf{transform-box:fill-box;transform:scale(0)}
 .sp .dustfade{animation:dustfade 3.6s ease-in forwards}
 .sp .osun{display:inline-block}
+
+/* ---- send: evidence card -> sealed envelope -> paper plane to the installer ---- */
+.sp{--env:#f6e7bd;--env2:#ead39a}
+.sp.dark{--env:#4a3a12;--env2:#3a2e0c}
+.sp .sendbtn{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;height:54px;border:0;border-radius:16px;background-color:var(--act);color:var(--actInk);font-weight:800;font-size:16px;cursor:pointer;transition:transform .15s ease,opacity .2s ease}
+.sp .sendbtn:active{transform:scale(.985)}
+.sp .sendbtn:disabled{opacity:.75;cursor:default}
+.sp .sendbtn:focus-visible{outline:2px solid #f5b300;outline-offset:3px}
+.sp .sfx{position:fixed;inset:0;z-index:70;pointer-events:none}
+.sp .sfx-env{position:absolute;inset:0}
+.sp .sfx-e{position:absolute;overflow:visible}
+.sp .sfx-flap{transform-box:view-box;transform-origin:95px 8px;transform:scaleY(-1)}
+.sp .sfx-seal{transform-box:fill-box;transform-origin:center;transform:scale(0)}
+.sp .sfx-trail{position:absolute;left:0;top:0;overflow:visible}
+.sp .sfx-trail path{fill:none;stroke:url(#sfxg);stroke-width:5;stroke-linecap:round;stroke-dasharray:.3 1.5;stroke-dashoffset:.3;opacity:0;filter:drop-shadow(0 0 5px rgba(245,179,0,.9))}
+.sp .sfx-plane{position:absolute;left:0;top:0;width:56px;height:40px;offset-rotate:auto;offset-distance:0%}
+.sp .sfx-plane svg{width:100%;height:100%;opacity:0}
+.sp .sfx-ring{position:absolute;border-radius:50%;border:3px solid #f5b300;opacity:0}
