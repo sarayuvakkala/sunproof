@@ -197,6 +197,9 @@ export function InstallerTab() {
 
   if (!v) return <Card style={{ color: 'var(--mut)' }}>{t('Loading…')}</Card>
   const at = (e: string) => issue?.timeline.find((x) => x.event === e)
+  /** Dates in the installer's note come as 2026-10-09 11:00; show them as Fri 9 Oct, 11:00. */
+  const nice = (s?: string) => (s ?? '').replace(/(\d{4})-(\d{2})-(\d{2})(?: (\d{2}:\d{2}))?/g, (_m, y, mo, d, tm) =>
+    new Date(+y, +mo - 1, +d).toLocaleDateString(lang === 'hi' ? 'hi-IN' : 'en-IN', { weekday: 'short', day: 'numeric', month: 'short' }) + (tm ? `, ${tm}` : ''))
   const when = (e: string) => { const x = at(e); return x ? fmtTime(x.at, lang) : '' }
   const sentAt = when('sent_to_app') || when('created')
   const repliedEv = ['book_visit', 'fixed_remotely', 'not_system_issue'].map(at).find(Boolean)
@@ -287,7 +290,7 @@ export function InstallerTab() {
 
       {view === 'visit' && issue && (
         <>
-          <InstallerBubble when={repliedAt}>📅 <b>{t('Visit booked.')}</b> {at('book_visit')?.note}</InstallerBubble>
+          <InstallerBubble when={repliedAt}>📅 <b>{t('Visit booked.')}</b> {nice(at('book_visit')?.note)}</InstallerBubble>
           {visitPhase && (
             <Card>
               <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
@@ -357,7 +360,7 @@ export function InstallerTab() {
       {view === 'dis' && (
         <>
           {cleaned && <CleanedCard res={cleaned} rain={cl === 'rain'} />}
-          <InstallerBubble when={repliedAt}>🙅 <b>{t('Not a system issue.')}</b> {at('not_system_issue')?.note}</InstallerBubble>
+          <InstallerBubble when={repliedAt}>🙅 <b>{t('Not a system issue.')}</b> {nice(at('not_system_issue')?.note)}</InstallerBubble>
           {!cleaned && <Card>
             <div className="h">{t('What you can do')}</div>
             <div className="sm" style={{ margin: '4px 0 12px', lineHeight: 1.55 }}>{t('Dust is a common cause. See whether a cleaning pays off.')}</div>
