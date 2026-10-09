@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#52514e"/>
+    </marker>
+    <style>
+      .box{fill:#fff;stroke:#c9c7c0;stroke-width:1.5;rx:12}
+      .aws{fill:#fff7ec;stroke:#ec835a}
+      .ext{fill:#f4f3ec;stroke:#a9a79f}
+      .person{fill:#e8f1fc;stroke:#2a78d6}
+      .t{font-size:14px;font-weight:600;fill:#0b0b0b}
+      .s{font-size:11.5px;fill:#52514e}
+      .l{font-size:11px;fill:#52514e}
+      .h{font-size:12px;font-weight:700;fill:#7a7974;letter-spacing:.06em}
+      .ln{stroke:#52514e;stroke-width:1.5;fill:none}
+      .dash{stroke-dasharray:5 4}
+    </style>
+  </defs>
+  <rect width="960" height="560" fill="#fcfcfb"/>
+  <text x="24" y="30" class="t" style="font-size:18px">SunProof architecture</text>
+
+  <!-- people -->
+  <rect class="box person" x="24" y="70" width="170" height="70"/>
+  <text x="109" y="98" text-anchor="middle" class="t">Household</text>
+  <text x="109" y="118" text-anchor="middle" class="s">Hindi / English app</text>
+  <rect class="box person" x="24" y="400" width="170" height="70"/>
+  <text x="109" y="428" text-anchor="middle" class="t">Installer</text>
+  <text x="109" y="448" text-anchor="middle" class="s">email + one-click page</text>
+
+  <!-- amplify -->
+  <rect class="box aws" x="250" y="70" width="170" height="70"/>
+  <text x="335" y="98" text-anchor="middle" class="t">Amplify Hosting</text>
+  <text x="335" y="118" text-anchor="middle" class="s">React app, installer page</text>
+
+  <!-- api gateway -->
+  <rect class="box aws" x="250" y="230" width="170" height="60"/>
+  <text x="335" y="256" text-anchor="middle" class="t">API Gateway</text>
+  <text x="335" y="274" text-anchor="middle" class="s">HTTP API</text>
+
+  <!-- lambda -->
+  <rect class="box aws" x="480" y="190" width="220" height="140"/>
+  <text x="590" y="216" text-anchor="middle" class="t">Lambda (container)</text>
+  <text x="590" y="238" text-anchor="middle" class="s">pvlib expected-output model</text>
+  <text x="590" y="256" text-anchor="middle" class="s">fault detector, verdict, units/₹/CO₂</text>
+  <text x="590" y="274" text-anchor="middle" class="s">clean-or-skip, fix verification</text>
+  <text x="590" y="292" text-anchor="middle" class="s">Cedar: who sees what</text>
+  <text x="590" y="310" text-anchor="middle" class="s">evidence chart</text>
+
+  <!-- step functions -->
+  <rect class="box aws" x="480" y="380" width="220" height="100"/>
+  <text x="590" y="406" text-anchor="middle" class="t">Step Functions</text>
+  <text x="590" y="426" text-anchor="middle" class="s">email → wait for reply (callback)</text>
+  <text x="590" y="444" text-anchor="middle" class="s">reminder at half time</text>
+  <text x="590" y="462" text-anchor="middle" class="s">escalation draft at deadline</text>
+
+  <!-- data -->
+  <rect class="box aws" x="760" y="70" width="170" height="60"/>
+  <text x="845" y="96" text-anchor="middle" class="t">DynamoDB</text>
+  <text x="845" y="114" text-anchor="middle" class="s">readings, issues, ledger</text>
+  <rect class="box aws" x="760" y="150" width="170" height="60"/>
+  <text x="845" y="176" text-anchor="middle" class="t">S3</text>
+  <text x="845" y="194" text-anchor="middle" class="s">evidence charts, voice clips</text>
+  <rect class="box aws" x="760" y="230" width="170" height="60"/>
+  <text x="845" y="256" text-anchor="middle" class="t">Polly</text>
+  <text x="845" y="274" text-anchor="middle" class="s">Hindi voice (Kajal)</text>
+  <rect class="box aws" x="760" y="400" width="170" height="60"/>
+  <text x="845" y="426" text-anchor="middle" class="t">SES</text>
+  <text x="845" y="444" text-anchor="middle" class="s">installer email</text>
+  <rect class="box aws" x="480" y="70" width="220" height="60"/>
+  <text x="590" y="96" text-anchor="middle" class="t">EventBridge</text>
+  <text x="590" y="114" text-anchor="middle" class="s">daily fix check</text>
+
+  <!-- external -->
+  <rect class="box ext" x="250" y="400" width="170" height="70"/>
+  <text x="335" y="428" text-anchor="middle" class="t">Open-Meteo</text>
+  <text x="335" y="448" text-anchor="middle" class="s">weather + rain forecast</text>
+
+  <!-- arrows -->
+  <path class="ln" marker-end="url(#a)" d="M194,105 H250"/>
+  <path class="ln" marker-end="url(#a)" d="M335,140 V230"/>
+  <path class="ln" marker-end="url(#a)" d="M420,260 H480"/>
+  <path class="ln" marker-end="url(#a)" d="M700,235 H730 V100 H760"/>
+  <path class="ln" marker-end="url(#a)" d="M700,255 H745 V180 H760"/>
+  <path class="ln" marker-end="url(#a)" d="M700,275 H760"/>
+  <path class="ln" marker-end="url(#a)" d="M590,330 V380"/>
+  <path class="ln" marker-end="url(#a)" d="M590,130 V190"/>
+  <path class="ln dash" marker-end="url(#a)" d="M420,420 H450 V310 H480"/>
+  <path class="ln" marker-end="url(#a)" d="M700,430 H760"/>
+  <path class="ln dash" marker-end="url(#a)" d="M845,460 V482 H109 V470"/>
+  <!-- installer clicks the link -> amplify page -> api -->
+  <path class="ln dash" marker-end="url(#a)" d="M109,400 V320 H215 V120 H250"/>
+  <text x="24" y="500" class="l">Flow: 1 household approves → 2 SES emails the installer → 3 installer clicks a button → 4 the reply resumes the workflow</text>
+  <text x="24" y="518" class="l">→ 5 the next 7 days of readings confirm the fix (or reopen it).</text>
+  <text x="24" y="545" class="l">Solid: calls. Dashed: email, link clicks and external data. Open-Meteo is free for non-commercial use.</text>
+</svg>
