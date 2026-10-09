@@ -1,0 +1,80 @@
+{
+  "Comment": "SunProof issue: email the installer, wait for a reply (reminder at half time, escalation draft at the deadline), then watch 7 days of generation to confirm the fix.",
+  "StartAt": "Notify",
+  "States": {
+    "Notify": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke.waitForTaskToken",
+      "Parameters": {
+        "FunctionName": "${FunctionArn}",
+        "Payload": {"task": "notify", "issueId.$": "$.issueId", "reopened.$": "$.reopened", "taskToken.$": "$$.Task.Token"}
+      },
+      "TimeoutSecondsPath": "$.timing.half",
+      "ResultPath": "$.reply",
+      "Catch": [{"ErrorEquals": ["States.Timeout"], "ResultPath": "$.error", "Next": "Remind"}],
+      "Next": "Replied"
+    },
+    "Remind": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {"FunctionName": "${FunctionArn}", "Payload": {"task": "remind", "issueId.$": "$.issueId"}},
+      "ResultPath": null,
+      "Next": "WaitSecondHalf"
+    },
+    "WaitSecondHalf": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke.waitForTaskToken",
+      "Parameters": {
+        "FunctionName": "${FunctionArn}",
+        "Payload": {"task": "rewait", "issueId.$": "$.issueId", "taskToken.$": "$$.Task.Token"}
+      },
+      "TimeoutSecondsPath": "$.timing.half",
+      "ResultPath": "$.reply",
+      "Catch": [{"ErrorEquals": ["States.Timeout"], "ResultPath": "$.error", "Next": "Escalate"}],
+      "Next": "Replied"
+    },
+    "Escalate": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {"FunctionName": "${FunctionArn}", "Payload": {"task": "escalate", "issueId.$": "$.issueId"}},
+      "ResultPath": null,
+      "End": true
+    },
+    "Replied": {
+      "Type": "Choice",
+      "Choices": [{"Variable": "$.reply.action", "StringEquals": "not_system_issue", "Next": "Disputed"}],
+      "Default": "AwaitFix"
+    },
+    "Disputed": {"Type": "Succeed"},
+    "AwaitFix": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke.waitForTaskToken",
+      "Parameters": {
+        "FunctionName": "${FunctionArn}",
+        "Payload": {"task": "await_fix", "issueId.$": "$.issueId", "taskToken.$": "$$.Task.Token"}
+      },
+      "TimeoutSecondsPath": "$.timing.verify",
+      "ResultPath": "$.fix",
+      "Catch": [{"ErrorEquals": ["States.Timeout"], "ResultPath": "$.error", "Next": "NoData"}],
+      "Next": "FixResult"
+    },
+    "FixResult": {
+      "Type": "Choice",
+      "Choices": [{"Variable": "$.fix.result", "StringEquals": "reopen", "Next": "Reopen"}],
+      "Default": "Done"
+    },
+    "Reopen": {
+      "Type": "Pass",
+      "Parameters": {"issueId.$": "$.issueId", "timing.$": "$.timing", "reopened": true},
+      "Next": "Notify"
+    },
+    "NoData": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {"FunctionName": "${FunctionArn}", "Payload": {"task": "no_data", "issueId.$": "$.issueId"}},
+      "ResultPath": null,
+      "End": true
+    },
+    "Done": {"Type": "Succeed"}
+  }
+}

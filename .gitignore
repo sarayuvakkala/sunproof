@@ -19,3 +19,4 @@ kaggle.json
 .DS_Store
 !web/.env.production
 !web/.env.development
+.env.local

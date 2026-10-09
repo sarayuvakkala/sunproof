@@ -10,10 +10,25 @@ Parameters:
     Type: String
     Default: ""
     Description: SES-verified sender address (set at deploy time, not committed)
+  InstallerEmail:
+    Type: String
+    Default: ""
+    Description: Test installer address for the demo households (set at deploy time, not committed)
+  AppUrl:
+    Type: String
+    Default: "https://main.d1x4u3l99wlpcs.amplifyapp.com"
+  DemoTimeScale:
+    Type: String
+    Default: "1"
+    Description: 1 = real 7-day window. 10000 = the window runs in about a minute (for testing)
+  DemoMode:
+    Type: String
+    Default: "true"
+    AllowedValues: ["true", "false"]
 
 Globals:
   Function:
-    Timeout: 30
+    Timeout: 60
     MemorySize: 1024
     Architectures: [arm64]
     Environment:
@@ -21,6 +36,11 @@ Globals:
         TABLE: !Ref Table
         BUCKET: !Ref Bucket
         SENDER_EMAIL: !Ref SenderEmail
+        INSTALLER_EMAIL: !Ref InstallerEmail
+        APP_URL: !Ref AppUrl
+        DEMO_TIME_SCALE: !Ref DemoTimeScale
+        DEMO_MODE: !Ref DemoMode
+        STATE_MACHINE_ARN: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:sunproof-issue"
 
 Resources:
   Table:
@@ -68,33 +88,50 @@ Resources:
             - Effect: Allow
               Action: [polly:SynthesizeSpeech]
               Resource: "*"
+        - Statement:
+            - Effect: Allow
+              Action: [ses:SendEmail]
+              Resource: "*"
+            - Effect: Allow
+              Action: [states:StartExecution]
+              Resource: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:sunproof-issue"
+            - Effect: Allow
+              Action: [states:SendTaskSuccess, states:SendTaskFailure]
+              Resource: "*"
       Events:
-        Verdict:
+        Api:
           Type: HttpApi
           Properties:
             ApiId: !Ref HttpApi
-            Path: "/homes/{homeId}/verdict"
-            Method: GET
-        Voice:
-          Type: HttpApi
+            Path: "/{proxy+}"
+            Method: ANY
+        DailyFixCheck:
+          Type: Schedule
           Properties:
-            ApiId: !Ref HttpApi
-            Path: "/homes/{homeId}/voice"
-            Method: POST
-        Accuracy:
-          Type: HttpApi
-          Properties:
-            ApiId: !Ref HttpApi
-            Path: "/accuracy"
-            Method: GET
+            Schedule: rate(1 day)
+            Input: '{"task": "daily_check"}'
     Metadata:
       DockerContext: ..
       Dockerfile: backend/Dockerfile
       DockerTag: python3.12
 
+  IssueStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Name: sunproof-issue
+      Type: STANDARD
+      DefinitionUri: statemachine/issue.asl.json
+      DefinitionSubstitutions:
+        FunctionArn: !GetAtt ApiFunction.Arn
+      Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref ApiFunction
+
 Outputs:
   ApiUrl:
     Value: !Sub "https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com"
+  StateMachineArn:
+    Value: !Ref IssueStateMachine
   TableName:
     Value: !Ref Table
   BucketName:
