@@ -7,7 +7,7 @@ const M = { top: 16, right: 16, bottom: 28, left: 40 }
 
 function useWidth<T extends HTMLElement>() {
   const ref = useRef<T>(null)
-  const [w, setW] = useState(600)
+  const [w, setW] = useState(280)
   useEffect(() => {
     if (!ref.current) return
     const ro = new ResizeObserver(([e]) => setW(e.contentRect.width))
@@ -25,7 +25,7 @@ function niceMax(v: number) {
 const fmtDate = (d: string, lang: Lang) =>
   new Date(d).toLocaleDateString(lang === 'hi' ? 'hi-IN' : 'en-IN', { day: 'numeric', month: 'short' })
 
-export function DailyChart({ data, lang }: { data: DailyPoint[]; lang: Lang }) {
+export function DailyChart({ data, lang, replayFrom }: { data: DailyPoint[]; lang: Lang; replayFrom?: string | null }) {
   const [wrap, width] = useWidth<HTMLDivElement>()
   const [hover, setHover] = useState<number | null>(null)
   const t = T[lang]
@@ -42,6 +42,7 @@ export function DailyChart({ data, lang }: { data: DailyPoint[]; lang: Lang }) {
     data.map((d, i) => `${i ? 'L' : 'M'}${x(i)},${y(d.p90)}`).join('') +
     data.map((_, k) => { const i = data.length - 1 - k; return `L${x(i)},${y(data[i].p10)}` }).join('') + 'Z'
   const line = data.map((d, i) => `${i ? 'L' : 'M'}${x(i)},${y(d.actual)}`).join('')
+  const replayIdx = replayFrom ? data.findIndex((d) => d.date >= replayFrom) : -1
   const xLabels = data.map((_, i) => i).filter((i) => i % Math.ceil(data.length / (width < 480 ? 4 : 7)) === 0)
 
   function onMove(e: React.PointerEvent<SVGRectElement>) {
@@ -54,8 +55,8 @@ export function DailyChart({ data, lang }: { data: DailyPoint[]; lang: Lang }) {
   const last = data.length - 1
 
   return (
-    <div ref={wrap} className="relative w-full select-none">
-      <svg width={width} height={H} role="img" aria-label={t.chartTitle}>
+    <div ref={wrap} className="relative w-full min-w-0 select-none">
+      <svg width={width} height={H} role="img" aria-label={t.chartTitle} style={{ display: 'block', maxWidth: '100%' }}>
         {ticks.map((v) => (
           <g key={v}>
             <line x1={M.left} x2={M.left + iw} y1={y(v)} y2={y(v)} stroke="var(--grid)" />
@@ -69,6 +70,12 @@ export function DailyChart({ data, lang }: { data: DailyPoint[]; lang: Lang }) {
             {fmtDate(data[i].date, lang)}
           </text>
         ))}
+        {replayIdx >= 0 && (
+          <g>
+            <rect x={x(replayIdx) - 2} y={M.top} width={x(last) - x(replayIdx) + 4} height={ih} fill="var(--demo-bg)" opacity={0.8} />
+            <text x={x(replayIdx) + 4} y={M.top + 12} fontSize="10" fontWeight={700} fill="var(--demo-ink)">{T[lang].replayTag}</text>
+          </g>
+        )}
         <path d={band} fill="var(--band)" opacity={0.7} />
         <path d={line} fill="none" stroke="var(--series-1)" strokeWidth={2} strokeLinejoin="round" />
         {data.map((d, i) =>

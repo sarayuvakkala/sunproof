@@ -1,6 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { getVerdict, getVoice, type Verdict } from '../api'
+import { CleanOrSkipCard } from '../components/CleanOrSkipCard'
 import { DailyChart } from '../components/DailyChart'
+import { IssuePanel } from '../components/IssuePanel'
+import { RecoveredBar } from '../components/RecoveredBar'
 import { STATUS, type Lang, T } from '../i18n'
 
 const HOMES = [
@@ -10,20 +14,41 @@ const HOMES = [
 
 const inr = (n: number) => n.toLocaleString('en-IN', { maximumFractionDigits: 0 })
 
+const store = {
+  get: (k: string) => { try { return localStorage.getItem(k) } catch { return null } },
+  set: (k: string, v: string | null) => { try { v === null ? localStorage.removeItem(k) : localStorage.setItem(k, v) } catch { /* ignore */ } },
+}
+
 export function Home() {
   const [lang, setLang] = useState<Lang>('hi')
   const [homeId, setHomeId] = useState(HOMES[0].id)
   const [v, setV] = useState<Verdict | null>(null)
   const [err, setErr] = useState(false)
   const [voiceBusy, setVoiceBusy] = useState(false)
+  const [issueId, setIssueId] = useState<string | null>(null)
+  const [tick, setTick] = useState(0)
   const audio = useRef<HTMLAudioElement>(null)
   const t = T[lang]
 
-  useEffect(() => {
-    setV(null)
+  const load = useCallback((keep: boolean) => {
+    if (!keep) setV(null)
     setErr(false)
-    getVerdict(homeId).then(setV).catch(() => setErr(true))
+    getVerdict(homeId).then((x) => {
+      setV(x)
+      setIssueId((cur) => cur ?? x.activeIssue ?? store.get(`issue:${homeId}`))
+    }).catch(() => setErr(true))
   }, [homeId])
+
+  useEffect(() => { setIssueId(null); load(false) }, [homeId, load])
+
+  function onIssue(id: string | null) {
+    setIssueId(id)
+    store.set(`issue:${homeId}`, id)
+    load(true)
+    setTick((n) => n + 1)
+  }
+
+  const onChange = useCallback(() => { load(true); setTick((n) => n + 1) }, [load])
 
   async function listen() {
     setVoiceBusy(true)
@@ -47,7 +72,11 @@ export function Home() {
           <h1 className="text-2xl font-bold tracking-tight">SunProof</h1>
           <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t.tagline}</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Link to="/accuracy" className="rounded-lg px-3 py-2 text-sm font-medium"
+            style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
+            {lang === 'hi' ? 'सटीकता' : 'Accuracy'}
+          </Link>
           <select
             value={homeId}
             onChange={(e) => setHomeId(e.target.value)}
@@ -72,6 +101,8 @@ export function Home() {
           {t.demo}
         </div>
       )}
+
+      <RecoveredBar lang={lang} refreshKey={tick} />
 
       {err && <div className="card p-6">{t.error}</div>}
       {!v && !err && <div className="card p-6" style={{ color: 'var(--text-secondary)' }}>{t.loading}</div>}
@@ -114,9 +145,13 @@ export function Home() {
             ))}
           </section>
 
+          <IssuePanel v={v} lang={lang} issueId={issueId} onIssue={onIssue} onChange={onChange} />
+
+          <CleanOrSkipCard homeId={homeId} lang={lang} refreshKey={tick} isDemo={v.isDemo} />
+
           <section className="card p-4 sm:p-5">
             <h2 className="mb-2 text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>{t.chartTitle}</h2>
-            <DailyChart data={v.daily} lang={lang} />
+            <DailyChart data={v.daily} lang={lang} replayFrom={v.replayFrom} />
             <p className="mt-3 text-xs" style={{ color: 'var(--text-muted)' }}>
               {t.assumptions(v.assumptions.tariff_inr_per_kwh, v.assumptions.co2_kg_per_kwh)}
             </p>
