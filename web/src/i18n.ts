@@ -118,12 +118,15 @@ export const ISSUE_STATUS: Record<IssueStatus, { hi: string; en: string; tone: '
   reopened: { hi: 'दोबारा खोला गया', en: 'Reopened with the installer', tone: 'serious' },
   escalation_draft: { hi: 'जवाब नहीं आया: शिकायत का मसौदा तैयार', en: 'No reply: escalation draft ready', tone: 'critical' },
   no_data: { hi: 'पुष्टि के लिए डेटा कम', en: 'Not enough data to confirm', tone: 'warning' },
+  fix_failed: { hi: 'सुधार टिका नहीं', en: "The fix didn't hold", tone: 'serious' },
 }
 
 export const EVENT_LABEL: Record<string, { hi: string; en: string }> = {
   created: { hi: 'आपने भेजने की अनुमति दी', en: 'You approved and sent it' },
-  email_sent: { hi: 'इंस्टॉलर को ईमेल गया', en: 'Installer emailed' },
-  email_failed: { hi: 'ईमेल नहीं जा सका (लिंक फिर भी चलेगा)', en: 'Email could not be sent (the link still works)' },
+  sent_to_app: { hi: 'इंस्टॉलर के ऐप में पहुँचा', en: 'Sent to your installer' },
+  on_the_way: { hi: 'इंस्टॉलर रास्ते में है', en: 'Installer is on the way' },
+  arrived: { hi: 'इंस्टॉलर पहुँच गया', en: 'Installer arrived' },
+  visit_done: { hi: 'विज़िट पूरी हुई', en: 'Visit done' },
   reminder: { hi: 'बीच में याद दिलाया गया', en: 'Reminder sent' },
   book_visit: { hi: 'इंस्टॉलर ने विज़िट तय की', en: 'Installer booked a visit' },
   fixed_remotely: { hi: 'इंस्टॉलर ने कहा: दूर से ठीक किया', en: 'Installer says fixed remotely' },
@@ -132,6 +135,8 @@ export const EVENT_LABEL: Record<string, { hi: string; en: string }> = {
   verifying: { hi: 'अगले 7 दिन की बिजली से पुष्टि हो रही है', en: 'Checking the next 7 days of generation' },
   replay: { hi: 'रीप्ले: सुधार के बाद का डेटा', en: 'Replay: data after the fix' },
   fixed: { hi: 'बिजली सामान्य सीमा में लौट आई', en: 'Output back in the expected range' },
+  cleaned: { hi: 'पैनल साफ़ हुए: उत्पादन वापस', en: 'Panels cleaned: output is back' },
+  fix_failed: { hi: 'सुधार टिका नहीं: उत्पादन फिर गिरा', en: "The fix didn't hold: output fell again" },
   reopened: { hi: 'अब भी कम: इंस्टॉलर के पास दोबारा खुला', en: 'Still low: reopened with the installer' },
   escalation_draft: { hi: 'समय सीमा खत्म: शिकायत का मसौदा तैयार', en: 'Deadline passed: escalation draft ready' },
   no_data: { hi: 'पुष्टि के लिए डेटा कम', en: 'Not enough readings to confirm' },

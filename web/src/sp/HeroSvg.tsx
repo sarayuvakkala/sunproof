@@ -5,7 +5,7 @@ const SMOKE_OK: [number, number, number][] = [[13, -34, 0]]
 
 /** Inverter, money leak, house and coal plant. `gap` is the kWh the grid had to fill today. */
 export function HeroSvg({ fixed, today, expected }: { fixed: boolean; today: number; expected: number }) {
-  const { t } = useApp()
+  const { t, v } = useApp()
   const f = fixed
   const pct = expected > 0 ? Math.min(100, Math.round((today / expected) * 100)) : 0
   const gap = Math.max(0, expected - today)
@@ -33,7 +33,7 @@ export function HeroSvg({ fixed, today, expected }: { fixed: boolean; today: num
         <circle cx="64" cy="148" r="3.2" fill="#22c55e" /><text x="64" y="160">{t('GRID')}</text>
         <circle className={f ? '' : 'led'} cx="88" cy="148" r="3.2" fill={f ? '#22c55e' : '#f59e0b'} /><text x="88" y="160">{f ? t('OK') : t('CHECK')}</text>
       </g>
-      <text x="64" y="178" fontSize="7" fontWeight="700" fill="var(--mut)" textAnchor="middle">{t('INVERTER · 3 kW')}</text>
+      <text x="64" y="178" fontSize="7" fontWeight="700" fill="var(--mut)" textAnchor="middle">{t(`INVERTER · ${v?.kw ?? 3} kW`)}</text>
       <path d="M110 150H222" stroke="var(--wire)" strokeWidth="5" strokeLinecap="round" />
       {f ? (
         <><path className="flow" d="M114 150H220" /><rect x="149" y="144" width="14" height="12" rx="3" fill="#22c55e" /></>

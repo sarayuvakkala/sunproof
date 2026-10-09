@@ -1,6 +1,6 @@
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Ic, type IconName } from './ic'
-import { useApp } from './state'
+import { DEMO_HOUSES, HOME_ID, store, useApp } from './state'
 
 const SUNI = (
   <svg className="osun" viewBox="-10 -10 20 20" aria-hidden>
@@ -28,7 +28,7 @@ export function Shell() {
   const here = (p: string) => loc.pathname.endsWith(`/${p}`)
   const canSend = v?.status === 'shortfall' || v?.status === 'trip'
   const dots: Record<string, boolean> = {
-    installer: (view === 'idle' && !!canSend) || view === 'esc' || view === 'reo',
+    installer: (view === 'idle' && !!canSend) || view === 'esc' || view === 'reo' || view === 'fail',
     cleaning: ((clean?.decision === 'clean' && !cl) || view === 'dis'),
     impact: view === 'fix' || (cl === 'clean' || cl === 'rain'),
   }
@@ -51,6 +51,15 @@ export function Shell() {
             style={{ cursor: 'pointer', padding: '3px 8px', border: '1px solid var(--line)' }}>{dark ? '☀' : '🌙'}</span>
         </div>
       </div>
+      {!acc && v?.isDemo && (
+        <div className="scn" aria-label={t('Demo house')} style={{ margin: '0 16px 6px' }}>
+          <span className="mut" style={{ fontSize: 12, padding: '6px 4px' }}>{t('Demo house')}</span>
+          {DEMO_HOUSES.map(([id, name]) => (
+            <span key={id} className={HOME_ID === id ? 'on' : ''} role="button" tabIndex={0} aria-pressed={HOME_ID === id}
+              onClick={() => { if (HOME_ID !== id) { store.set('sp:home', id); window.location.reload() } }}>{name}</span>
+          ))}
+        </div>
+      )}
       <div className="body"><Outlet /></div>
       {!acc && (
         <nav className="tabs" aria-label="Main">

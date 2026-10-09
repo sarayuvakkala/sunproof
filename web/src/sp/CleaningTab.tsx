@@ -80,7 +80,7 @@ function Forecast({ d }: { d: CleanOrSkip }) {
 }
 
 export function CleaningTab() {
-  const { clean: d, scn, setScn, cl, setCl, v, t, lang } = useApp()
+  const { clean: d, scn, setScn, cl, setCl, markCleaned, v, t, lang } = useApp()
   const nav = useNavigate()
   const [open, setOpen] = useState(false)
 
@@ -126,7 +126,7 @@ export function CleaningTab() {
           <Card delay={0.05}>
             <div className="h">{t('What will you do?')}</div>
             <div className="chs">
-              <span className="ch" role="button" tabIndex={0} onClick={() => setCl('clean')}><Ic n="brush" size={26} color="#e8a400" style={{ display: 'block', margin: '0 auto 6px' }} />{t("I'll clean them")}<small>{t(`₹${Math.round(d.cleaning_cost)} · one time`)}</small></span>
+              <span className="ch" role="button" tabIndex={0} onClick={() => void markCleaned()}><Ic n="brush" size={26} color="#e8a400" style={{ display: 'block', margin: '0 auto 6px' }} />{t("I'll clean them")}<small>{t(`₹${Math.round(d.cleaning_cost)} · one time`)}</small></span>
               <span className="ch" role="button" tabIndex={0} onClick={() => setCl(d.rain_expected ? 'raining' : 'rain')}><Ic n="cloud-rain" size={26} color="#2563eb" style={{ display: 'block', margin: '0 auto 6px' }} />{t('Let the rain wash them')}<small>{d.rain_expected ? `${weekday(d.rain_expected.date, lang)} · ${Math.round(d.rain_expected.mm)} mm` : t('No rain in the forecast')}</small></span>
             </div>
           </Card>
@@ -207,7 +207,7 @@ export function CleaningTab() {
               </>
             ) : (
               <div style={{ display: 'flex', gap: 8 }}>
-                <span className="ghost" role="button" tabIndex={0} onClick={() => setCl('clean')}>{t("I'll clean them instead")}</span>
+                <span className="ghost" role="button" tabIndex={0} onClick={() => void markCleaned()}>{t("I'll clean them instead")}</span>
                 <span className="ghost" role="button" tabIndex={0} onClick={() => setCl(null)}>{t('Back')}</span>
               </div>
             )}

@@ -4,7 +4,7 @@ import {
   IconChevronDown, IconChevronLeft, IconChevronRight, IconCircleCheck, IconClock, IconCloudRain,
   IconCopy, IconDatabase, IconEyeOff, IconFileText, IconHome, IconLeaf, IconMail,
   IconMessageCircle, IconPlayerPause, IconPlayerPlay, IconPropeller, IconRefresh, IconSearch,
-  IconShare, IconSun, IconTarget, IconTool, IconUser, IconUsers, IconDroplet,
+  IconShare, IconSun, IconTarget, IconTool, IconUser, IconUsers, IconDroplet, IconBriefcase, IconArrowsExchange, IconLock, IconX, IconPhone, IconCar, IconNavigation,
 } from '@tabler/icons-react'
 
 const ICONS = {
@@ -16,6 +16,7 @@ const ICONS = {
   'message-circle': IconMessageCircle, 'player-pause': IconPlayerPause, 'player-play': IconPlayerPlay,
   propeller: IconPropeller, refresh: IconRefresh, search: IconSearch, share: IconShare, sun: IconSun,
   target: IconTarget, tool: IconTool, user: IconUser, users: IconUsers, droplet: IconDroplet,
+  briefcase: IconBriefcase, swap: IconArrowsExchange, lock: IconLock, x: IconX, phone: IconPhone, car: IconCar, nav: IconNavigation,
 } as const
 
 export type IconName = keyof typeof ICONS

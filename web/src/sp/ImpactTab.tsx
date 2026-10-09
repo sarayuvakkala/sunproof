@@ -37,7 +37,7 @@ function AccTiles({ a }: { a: Accuracy | null }) {
         <div><b>{k.trip.caught}/{k.trip.injected}</b><span>{t('stopped systems')}</span></div>
         <div><b>{k.step.caught}/{k.step.injected}</b><span>{t('sudden 20% drops')}</span></div>
         <div><b>{k.dust.caught}/{k.dust.injected}</b><span>{t('dust build-ups')}</span></div>
-        <div><b style={{ color: '#e8a400' }}>{(a.false_alarms.rate * 100).toFixed(2)}%</b><span>{t('false alarms')}</span></div>
+        <div><b style={{ color: 'var(--amb)' }}>{(a.false_alarms.rate * 100).toFixed(2)}%</b><span>{t('false alarms')}</span></div>
       </div>
       <div style={{ marginTop: 12, fontWeight: 700, fontSize: 13, cursor: 'pointer' }} role="button" tabIndex={0} onClick={() => nav('/app/accuracy')}>{t('Full accuracy report →')}</div>
     </Card>
@@ -89,7 +89,8 @@ export function ImpactTab() {
   const fixed = view === 'fix' && issue?.recovered ? issue.recovered : null
   const fx = fixed ? { u: fixed.kwh, r: fixed.rupees, c: fixed.co2_kg } : { u: 0, r: 0, c: 0 }
   const res = cleanResult(cl, d, v)
-  const cu = res && res.g === 1 ? res : null
+  const byCleaning = fixed !== null && issue?.recovered?.by === 'cleaning'  // already counted as the issue's fix
+  const cu = res && res.g === 1 && !byCleaning ? res : null
   const U = r1(fx.u + (cu?.u ?? 0)), R = fx.r + (cu?.r ?? 0), C = r1(fx.c + (cu?.c ?? 0))
   const n = (fixed ? 1 : 0) + (cu ? 1 : 0)
 
@@ -157,8 +158,8 @@ export function ImpactTab() {
             <span className="chipS" style={{ background: '#dcfce7', color: '#166534' }}>{t('✓ Fixed')}</span>
           </div>
           <div className="sm" style={{ marginTop: 10, lineHeight: 1.6 }}>
-            <Ic n="user" size={14} style={{ verticalAlign: 'text-bottom' }} /> {t('Fixed by Test installer')}<br />
-            <Ic n="chart-line" size={14} style={{ verticalAlign: 'text-bottom' }} /> {t('Confirmed by 7 days of data')} <span className="rtag">{t('REPLAY')}</span>
+            <Ic n="user" size={14} style={{ verticalAlign: 'text-bottom' }} /> {t(byCleaning ? 'Fixed by cleaning the panels' : 'Fixed by installer')}<br />
+            <Ic n="chart-line" size={14} style={{ verticalAlign: 'text-bottom' }} /> {byCleaning ? t('Dust was the cause') : t('Confirmed by 7 days of data')} <span className="rtag">{t(byCleaning ? 'Estimated' : 'REPLAY')}</span>
           </div>
         </Card>
       )}

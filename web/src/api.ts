@@ -30,6 +30,8 @@ export interface Verdict {
   activeIssue: string | null
   installerName: string | null
   replayFrom: string | null
+  kw?: number
+  city?: string
 }
 
 export interface TimelineEvent {
@@ -40,7 +42,7 @@ export interface TimelineEvent {
 
 export type IssueStatus =
   | 'sent' | 'visit_booked' | 'fixed_remotely' | 'disputed' | 'fixed'
-  | 'reopened' | 'escalation_draft' | 'no_data'
+  | 'reopened' | 'escalation_draft' | 'no_data' | 'fix_failed'
 
 export interface Issue {
   issueId: string
@@ -50,10 +52,18 @@ export interface Issue {
   installerName: string
   summary: string
   timeline: TimelineEvent[]
-  recovered: { kwh: number; rupees: number; co2_kg: number } | null
+  recovered: { kwh: number; rupees: number; co2_kg: number; by?: string } | null
   escalationDraft: string | null
   installerLink: string
   chartUrl: string
+  /** Visit progress from the installer app. visitDone is null for a visit booked through the old link. */
+  visit?: { date: string; time: string } | null
+  visitDone?: boolean | null
+  trip?: { stage: 'on_the_way' | 'arrived'; at: string } | null
+  /** The 7-day check so far: one entry per day, ok = that day's output was inside the expected range. */
+  checkDays?: { day: number; ok: boolean }[]
+  failedDay?: number | null
+  failedPct?: number | null
 }
 
 export interface CleanOrSkip {
@@ -153,4 +163,31 @@ export const respond = (token: string, action: InstallerAction, note?: string) =
 
 export const demoReplayFix = (issueId: string, outcome: 'fixed' | 'still_low') =>
   call<{ result: string }>('/demo/replay-fix', post({ issueId, outcome }))
+export const demoAdvanceDay = (issueId: string, manual = false) => call<{ result: string }>('/demo/advance-day', post({ issueId, manual }))
+export const cleanedApi = (issueId: string, homeId: string) => call<{ ok: boolean }>(`/issues/${issueId}/cleaned`, post({ homeId }))
+export const revisit = (issueId: string, homeId: string) => call<{ ok: boolean }>(`/issues/${issueId}/revisit`, post({ homeId }))
 export const demoReset = () => call<{ ok: boolean }>('/demo/reset', post({}))
+
+// Installer app (one fixed demo installer). See docs/api.md.
+export interface ProJob {
+  issueId: string; homeId: string; name: string; kw: number | null; city: string
+  state: 'new' | 'visit' | 'check' | 'fixed' | 'closed'; overdue: boolean; status: IssueStatus
+  daysLeft: number | null; deadlineText: string; pctBelow: number; weeks: number; unitsLost: number
+  visit: { date: string; time: string } | null; day: number
+  recovered: { kwh: number; rupees: number; co2_kg: number; by?: string } | null
+  replyDays: number | null; created: string; reopened: boolean
+  trip: 'on_the_way' | 'arrived' | null
+  fixFailed?: boolean
+}
+export interface ProJobDetail extends ProJob {
+  summary: string; likelyCause: string; period: { start: string; end: string }; co2Kg: number
+  daily: DailyPoint[]; chartUrl: string; timeline: TimelineEvent[]; isDemo: boolean
+}
+export interface ProReply { action: InstallerAction; visit_date?: string; visit_time?: string; note?: string }
+
+export const proJobs = () => call<{ installer: string; jobs: ProJob[] }>('/pro/jobs')
+export const proJob = (id: string) => call<ProJobDetail>(`/pro/jobs/${id}`)
+export const proRespond = (id: string, body: ProReply) =>
+  call<{ ok: boolean; late?: boolean; status?: string }>(`/pro/jobs/${id}/respond`, post(body))
+export const proTrip = (id: string, step: 'on_the_way' | 'arrived') => call<{ ok: boolean }>(`/pro/jobs/${id}/trip`, post({ step }))
+export const proVisitDone = (id: string) => call<{ ok: boolean }>(`/pro/jobs/${id}/visit-done`, post({}))

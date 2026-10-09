@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Ic } from './ic'
 import { useApp } from './state'
 
 const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -63,7 +64,13 @@ export function Launch() {
         </svg>
       </div>
       <div className={`lcta fade ${cta ? 'in' : ''}`} onClick={(e) => e.stopPropagation()}>
-        <span className="act" role="button" tabIndex={0} onClick={() => nav('/app/home')} onKeyDown={(e) => { if (e.key === 'Enter') nav('/app/home') }}>{t('Try the demo')}</span>
+        <div className="lsay">{t('Try the demo as')}</div>
+        <span className="act" role="button" tabIndex={0} onClick={() => nav('/app/home')} onKeyDown={(e) => { if (e.key === 'Enter') nav('/app/home') }}>
+          <Ic n="home" size={18} />{t('Home owner')}
+        </span>
+        <span className="act2" role="button" tabIndex={0} onClick={() => nav('/pro/jobs')} onKeyDown={(e) => { if (e.key === 'Enter') nav('/pro/jobs') }}>
+          <Ic n="tool" size={18} />{t('Installer')}
+        </span>
         <span style={{ textAlign: 'center', fontSize: 13, color: 'var(--mut)', border: '1px solid var(--line)', borderRadius: 12, padding: '11px 0', background: 'var(--bg)' }}>{t('Sign in · Coming soon')}</span>
       </div>
     </div>

@@ -18,6 +18,7 @@ const CHIP: Record<View | 'ok', Chip> = {
   visit: ['#dbeafe', '#1e40af', 'calendar', 'Visit booked', 'installer'],
   ver: ['#dbeafe', '#1e40af', 'chart-line', 'Checking the fix', 'installer'],
   fix: ['#dcfce7', '#166534', 'circle-check', 'Fixed · energy recovered', 'impact'],
+  fail: ['#fef3c7', '#92400e', 'alert-triangle', "The fix didn't hold", 'installer'],
   reo: ['#fef3c7', '#92400e', 'refresh', 'Reopened with installer', 'installer'],
   esc: ['#fee2e2', '#991b1b', 'file-text', 'Complaint ready to file', 'installer'],
   dis: ['#f1f5f9', '#334155', 'message-circle', 'Installer: not the system', 'cleaning'],
@@ -60,7 +61,7 @@ export function HomeTab() {
       <Card>
         <div style={{ fontSize: 21, fontWeight: 800, letterSpacing: '-.02em', whiteSpace: 'nowrap' }}>{t(`Namaste, ${home} 👋`)}</div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
-          <span className="sm mut">{t('3 kW rooftop · Delhi')}</span>
+          <span className="sm mut">{t(`${v.kw ?? 3} kW rooftop · ${v.city ?? 'Delhi'}`)}</span>
           {weather && <span style={{ fontSize: 12, border: '1px solid var(--line)', borderRadius: 999, padding: '3px 10px', whiteSpace: 'nowrap' }}>{weather.icon} {weather.temp}°</span>}
         </div>
         <div style={{ marginTop: 10 }}>

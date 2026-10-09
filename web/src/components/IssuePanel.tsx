@@ -146,7 +146,7 @@ export function IssuePanel({ v, lang, issueId, onIssue, onChange }: {
                       {t.replayTag}
                     </b>
                   )}
-                  {e.note && !['created', 'email_sent', 'reminder', 'verifying', 'replay'].includes(e.event) && (
+                  {e.note && !['created', 'sent_to_app', 'reminder', 'verifying', 'replay'].includes(e.event) && (
                     <span className="block text-xs" style={{ color: 'var(--text-secondary)' }}>{e.note}</span>
                   )}
                 </span>
