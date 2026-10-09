@@ -25,7 +25,7 @@ SunProof finds lost clean generation, gets the problem to the responsible party 
 | **Expected vs actual** | An open-source solar model ([pvlib](https://pvlib.readthedocs.io/)) plus weather gives an expected daily range for the roof. Every shortfall is shown as **units lost, ₹ lost and kg CO₂ added**. |
 | **Plain-words verdict, in Hindi** | The verdict is written in simple Hindi and English, and read aloud with Amazon Polly. Wording is always "worth checking", never an accusation. |
 | **Clean or skip** | Uses the rain forecast and estimated dust loss to say whether cleaning pays, or "Skip, rain on Sunday". |
-| **Send to my installer** | The household approves, then SunProof emails the installer an evidence chart and a no-signup response link. |
+| **Send to my installer** | The household approves, then the issue appears live in the installer app with an evidence chart and one-tap replies (book a visit, fixed remotely, not a system issue). |
 | **Follow up** | A Step Functions workflow tracks a 7-day response window, sends a reminder at half time, and drafts an escalation for the household to file if there is no reply. |
 | **Verify the fix** | After the installer replies, SunProof checks the next 7 days of generation. Back in range closes the issue as **Fixed ✅** and adds to the **clean energy recovered** counter. Still low reopens it with the installer. |
 | **Who sees what** | [Cedar](https://www.cedarpolicy.com/) policies: the installer sees generation data and evidence, never the bill or contact details, and nothing is sent without the household's approval. |
@@ -65,9 +65,8 @@ Reproduce it: `python -m accuracy.run_kaggle` writes `accuracy/report.json` dete
 | Response window, reminder, escalation, fix check | **Step Functions** (wait for the installer's reply) |
 | Daily fix check | **EventBridge** |
 | Hindi voice summary | **Polly** (Kajal, hi-IN) |
-| Installer email | **SES** |
 | Who sees what | **Cedar** policies, evaluated in the API Lambda |
-| Household app and installer response page | **Amplify Hosting** |
+| Household app and installer app | **Amplify Hosting** |
 
 ## Data sources
 
@@ -83,12 +82,12 @@ Reproduce it: `python -m accuracy.run_kaggle` writes `accuracy/report.json` dete
 - **Trips are not caught the same day.** A stopped system shows up in the daily check as a large shortfall, not as an instant alert.
 - **The escalation is a draft.** SunProof does not file anything with any government system.
 - **Fix verification in the demo uses replayed data**, labelled REPLAY.
-- **Demo installer:** the installer in the demo is a test email address, labelled "test installer".
+- **Demo installer:** the installer app has no sign-in yet. It acts as one fixed demo installer, labelled "test installer". Real installer sign-in is a next step.
 - **Demo clock:** `DEMO_TIME_SCALE` shortens the 7-day window for demos (1 = real time).
 - **Demo endpoints:** `/demo/reset` and `/demo/replay-fix` are unauthenticated and exist for the demo. Turn them off with `DemoMode=false` when deploying.
 - **No household login.** The demo has no sign-in: anyone who knows a home's ID can read its verdict, and the household screen is not access-controlled. This is safe here only because every home is a public-data demo. The Cedar rules do enforce the installer side (the installer sees generation data and evidence only, never the bill or contact details) and the household's approval before anything is sent. A real rollout needs household sign-in (for example Amazon Cognito), per-home ownership, and a way to add a home and its readings. That is the first next step.
 - **Bill check and warranty reminder** are not built.
-- **Email only.** SMS in India needs DLT registration.
+- **No email or SMS.** Messages stay inside the app. SMS in India needs DLT registration, and email is a possible next step.
 - **Installer contact details** are entered by the household once; in a rollout they could come from the PM Surya Ghar portal.
 
 ## Run it
@@ -98,16 +97,14 @@ Requirements: Python 3.12, Node 20.19+ (or 22.12+), Docker, AWS CLI, AWS SAM CLI
 ```bash
 # engine and accuracy tests
 python3.12 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
-.venv/bin/pytest engine accuracy
+.venv/bin/pytest engine accuracy backend/tests
 
 # data (download the Kaggle zip and unzip it somewhere outside the repo)
 export SUNPROOF_DATA=~/datasets/kaggle-solar
 .venv/bin/python -m accuracy.make_demo_household   # demo households
 .venv/bin/python -m accuracy.run_kaggle            # accuracy report
 
-# backend: put these in .env.local (gitignored), then deploy
-#   SENDER_EMAIL=<SES-verified address>
-#   INSTALLER_EMAIL=<test installer address>
+# backend: optionally put this in .env.local (gitignored), then deploy
 #   DEMO_TIME_SCALE=1        # 1440 = the 7-day window runs in 7 minutes
 ./scripts/deploy_api.sh
 
