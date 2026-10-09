@@ -10,22 +10,25 @@ from boto3.dynamodb.conditions import Key
 
 from engine import constants as C
 from engine.evidence import render
-from engine.verify_fix import verify
+from engine.verify_fix import day_results, verify
 
-from . import homes, mail
+from . import homes
 from .authz import allowed
 from .store import (APP_URL, BUCKET, DEMO_TIME_SCALE, RESPONSE_DAYS, STATE_MACHINE_ARN, TABLE, from_dynamo, get,
                     now_iso, presign, put, s3, sfn, to_dynamo)
 
 IST = timezone(timedelta(hours=5, minutes=30))
 ACTIONS = {"book_visit": "visit_booked", "fixed_remotely": "fixed_remotely", "not_system_issue": "disputed"}
+DEMO_INSTALLER_ID = "demo-installer"  # the one fixed installer behind the installer app until real sign-in exists
+NOT_YET = "9999-12-31"  # fixAfter while a booked visit has not happened: the 7-day check cannot start
 
 
 # ---------- small helpers ----------
 
 def _timing() -> dict:
     window = max(int(RESPONSE_DAYS * 86400 / DEMO_TIME_SCALE), 20)
-    return {"window": window, "half": window // 2, "verify": max(int(7 * 86400 / DEMO_TIME_SCALE), 20)}
+    # The fix check starts after the visit, which can be days away, so it gets three weeks to finish.
+    return {"window": window, "half": window // 2, "verify": max(int(21 * 86400 / DEMO_TIME_SCALE), 20)}
 
 
 def _fmt(dt: datetime) -> str:
@@ -90,16 +93,20 @@ def start_issue(home_id: str, approved: bool):
     chart_key = f"evidence/{issue_id}/chart.png"
     s3.put_object(Bucket=BUCKET, Key=chart_key, Body=png, ContentType="image/png")
 
+    installer_id = meta.get("installer_id", DEMO_INSTALLER_ID)
+    pct = round(100 * (1 - v["ratio"])) if v.get("ratio") else 0
     link = f"{APP_URL}/r/{token}"
     put({"PK": f"ISSUE#{issue_id}", "SK": "META", "issueId": issue_id, "homeId": home_id, "status": "sent",
          "created": now_iso(), "deadline": deadline.isoformat(timespec="seconds"), "deadlineText": _fmt(deadline),
          "token": token, "link": link, "summary": summary, "cause": cause, "evidenceKey": chart_key,
          "unitsLost": v["units_lost"], "rupeesLost": v["rupees_lost"], "co2Kg": v["co2_kg"],
+         "installerId": installer_id, "pctBelow": pct,
          "periodStart": v["period"]["start"], "periodEnd": v["period"]["end"],
          "timeline": [{"at": now_iso(), "event": "created", "note": "Household approved and sent the issue."}],
-         "installerName": meta.get("installer_name", "Installer"), "installerEmail": meta.get("installer_email", "")})
+         "installerName": meta.get("installer_name", "Installer")})
     put({"PK": f"TOKEN#{token}", "SK": "META", "issueId": issue_id})
     put({"PK": "OPEN_ISSUES", "SK": issue_id})
+    put({"PK": f"PRO#{installer_id}", "SK": issue_id})
     TABLE.update_item(Key={"PK": f"HOME#{home_id}", "SK": "META"}, UpdateExpression="SET active_issue = :i",
                       ExpressionAttributeValues={":i": issue_id})
     ex = sfn.start_execution(stateMachineArn=STATE_MACHINE_ARN, name=issue_id,
@@ -119,7 +126,19 @@ def issue_view(issue_id: str, home_id: str):
         "installerName": issue["installerName"], "summary": issue["summary"], "timeline": issue.get("timeline", []),
         "recovered": issue.get("recovered"), "escalationDraft": issue.get("escalationDraft"),
         "installerLink": issue["link"], "chartUrl": presign(issue["evidenceKey"]),
+        # Visit progress, so the household sees what the installer does as it happens. visitDone is None for a visit
+        # booked through the old email-style link, which has no installer app to report progress.
+        "visit": issue.get("visit"), "visitDone": issue.get("visitDone"), "trip": issue.get("trip"),
+        # The 7-day check, one entry per day so far; failedDay/failedPct are set when the fix did not hold.
+        "checkDays": _check_days(issue), "failedDay": issue.get("failedDay"), "failedPct": issue.get("failedPct"),
     }
+
+
+def _check_days(issue: dict) -> list[dict]:
+    fix_after = issue.get("fixAfter") or ""
+    if not fix_after or fix_after == NOT_YET:
+        return []
+    return day_results(homes.verdict_for(issue["homeId"], 90)["daily"], fix_after)
 
 
 def recovered_total():
@@ -171,15 +190,22 @@ def respond(token: str, body: dict):
     issue = _issue_for_token(token)
     if issue is None:
         return 404, {"error": "This link is not valid."}
+    return apply_reply(issue, body, ("Installer", issue["issueId"]))
+
+
+def apply_reply(issue: dict, body: dict, principal: tuple[str, str]):
+    """One reply to an issue, from the installer link (principal Installer) or the installer app (principal Pro)."""
     iid, action = issue["issueId"], body.get("action")
     if action not in ACTIONS:
         return 400, {"error": "unknown action"}
-    if not allowed(("Installer", iid), "respond", "issue", issue=iid):
+    if not allowed(principal, "respond", "issue", issue=iid, installer=issue.get("installerId", DEMO_INSTALLER_ID)):
         return 403, {"error": "not allowed"}
 
     note = str(body.get("note") or "")[:300]
     visit = str(body.get("visit_date") or "")[:10]
-    label = {"book_visit": f"Installer booked a visit{(' for ' + visit) if visit else ''}.",
+    vtime = str(body.get("visit_time") or "")[:5]
+    when = f"{visit} {vtime}".strip()
+    label = {"book_visit": f"Installer booked a visit{(' for ' + when) if when else ''}.",
              "fixed_remotely": "Installer says it was fixed remotely.",
              "not_system_issue": "Installer says this is not a system issue (dust or billing)."}[action]
     token_key = issue.get("waitToken")
@@ -189,7 +215,14 @@ def respond(token: str, body: dict):
 
     last = homes.readings(issue["homeId"], 1)
     fix_after = str(last.index.max().date()) if len(last) else ""
-    _update(iid, fixAfter=fix_after, waitToken=None)
+    fields = {"fixAfter": fix_after, "waitToken": None, "failedDay": None, "failedPct": None}
+    if principal[0] == "Pro":
+        # In the installer app a booked visit comes first; the 7-day check starts when the visit is marked done.
+        if action == "book_visit":
+            fields.update(fixAfter=NOT_YET, visit={"date": visit, "time": vtime}, visitDone=False)
+        if action == "fixed_remotely":
+            fields["visitDone"] = True
+    _update(iid, **fields)
     _event(iid, action, f"{label} {note}".strip(), status=ACTIONS[action])
     try:
         sfn.send_task_success(taskToken=token_key, output=json.dumps({"action": action}))
@@ -199,6 +232,39 @@ def respond(token: str, body: dict):
     except (sfn.exceptions.TaskDoesNotExist, sfn.exceptions.InvalidToken):
         return 200, {"ok": True, "late": True}
     return 200, {"ok": True, "status": ACTIONS[action]}
+
+
+TRIP_STEPS = {
+    "on_the_way": "Installer is on the way to your home.",
+    "arrived": "Installer has arrived at your home.",
+}
+
+
+def set_trip(issue: dict, step: str, principal: tuple[str, str]):
+    """The installer reports progress on a booked visit: on the way, then arrived. The household sees it live."""
+    iid = issue["issueId"]
+    if step not in TRIP_STEPS:
+        return 400, {"error": "unknown step"}
+    if not allowed(principal, "respond", "issue", issue=iid, installer=issue.get("installerId", DEMO_INSTALLER_ID)):
+        return 403, {"error": "not allowed"}
+    if issue["status"] != "visit_booked" or issue.get("visitDone"):
+        return 409, {"error": "There is no booked visit in progress."}
+    _update(iid, trip={"stage": step, "at": now_iso()})
+    _event(iid, step, TRIP_STEPS[step])
+    return 200, {"ok": True, "trip": step}
+
+
+def mark_visit_done(issue: dict, principal: tuple[str, str]):
+    """The installer says the booked visit happened. The 7-day fix check now starts from the latest reading."""
+    iid = issue["issueId"]
+    if not allowed(principal, "respond", "issue", issue=iid, installer=issue.get("installerId", DEMO_INSTALLER_ID)):
+        return 403, {"error": "not allowed"}
+    if issue["status"] != "visit_booked" or issue.get("visitDone"):
+        return 409, {"error": "There is no booked visit waiting to be marked done."}
+    last = homes.readings(issue["homeId"], 1)
+    _update(iid, fixAfter=str(last.index.max().date()) if len(last) else "", visitDone=True)
+    _event(iid, "visit_done", "Installer marked the visit done. SunProof is checking the next 7 days of output.")
+    return 200, {"ok": True, "status": "visit_booked", "visitDone": True}
 
 
 # ---------- fix verification ----------
@@ -211,6 +277,15 @@ def check_fix(issue_id: str) -> dict:
     v = homes.verdict_for(issue["homeId"], 90)
     res = verify(v["daily"], issue["fixAfter"], tariff=float(meta.get("tariff", 8)))
     if res["result"] == "pending":
+        return res
+    if res["result"] == "relapse":
+        # It was back for a while, then fell again. The household chooses what to do next (clean, or ask for a revisit),
+        # so the check stays open until they do.
+        if issue["status"] != "fix_failed":
+            n = res["failed_day"]
+            _update(issue_id, failedDay=n, failedPct=res["pct_below"])
+            _event(issue_id, "fix_failed", f"Output was back for {n - 1} day(s), then fell again on day {n}, about "
+                   f"{res['pct_below']}% under expected.", status="fix_failed")
         return res
 
     if res["result"] == "fixed":
@@ -230,6 +305,82 @@ def check_fix(issue_id: str) -> dict:
     except Exception:  # execution already finished
         pass
     return res
+
+
+MIN_DAY_GAP_S = 8  # a day never lands sooner than this after the last one, unless the presenter taps for it
+
+
+def demo_advance_day(issue_id: str, manual: bool = False):
+    """Demo only: add one more day of readings after the fix (labelled REPLAY) and run the check. The household app calls
+    this on a timer, or when the presenter taps 'next day', so the 7-day check unfolds a day at a time."""
+    issue = get(f"ISSUE#{issue_id}")
+    if not issue:
+        return 404, {"error": "issue not found"}
+    meta = get(f"HOME#{issue['homeId']}")
+    if not meta.get("isDemo"):
+        return 403, {"error": "replay is only available for demo homes"}
+    fix_after = issue.get("fixAfter") or ""
+    if not issue.get("fixToken") or not fix_after or fix_after == NOT_YET or issue["status"] == "fix_failed":
+        return 409, {"error": "No fix check is running."}
+    last = issue.get("lastAdvanceAt")
+    if not manual and last and (datetime.now(timezone.utc) - datetime.fromisoformat(last)).total_seconds() < MIN_DAY_GAP_S:
+        return 200, {"result": "pending", "skipped": True}  # another page already moved the clock on
+    day = sum(1 for d in homes.readings(issue["homeId"], 30).index if str(d.date()) > fix_after) + 1
+    _update(issue_id, lastAdvanceAt=now_iso())
+    if day <= 7:
+        homes.replay_next_day(issue["homeId"], meta, day)
+        _event(issue_id, "replay", f"Demo: day {day} of 7 after the fix (labelled REPLAY).")
+    return 200, check_fix(issue_id)
+
+
+def revisit(issue_id: str, home_id: str):
+    """The fix did not hold and the household asks the installer to come back: the issue is open with the installer again."""
+    issue = get(f"ISSUE#{issue_id}")
+    if issue is None:
+        return 404, {"error": "issue not found"}
+    if not allowed(("Household", home_id), "send_issue", "issue", home=issue["homeId"], context={"approved": True}):
+        return 403, {"error": "not allowed"}
+    if issue["status"] != "fix_failed" or not issue.get("fixToken"):
+        return 409, {"error": "There is no failed fix to send back."}
+    token_key = issue["fixToken"]
+    _update(issue_id, fixToken=None)
+    _event(issue_id, "reopened", "Household asked the installer to come back, with the new readings.", status="reopened")
+    try:
+        sfn.send_task_success(taskToken=token_key, output=json.dumps({"result": "reopen"}))
+    except Exception:  # execution already finished
+        pass
+    return 200, {"ok": True, "status": "reopened"}
+
+
+def cleaned(issue_id: str, home_id: str):
+    """The household cleaned the panels after the fix did not hold (or after the installer said it is not the system).
+    Dust was the cause, so the issue is fixed: the energy dust was costing is counted (an estimate, not a measurement),
+    and the installer sees the job as fixed too."""
+    issue = get(f"ISSUE#{issue_id}")
+    if issue is None:
+        return 404, {"error": "issue not found"}
+    if not allowed(("Household", home_id), "send_issue", "issue", home=issue["homeId"], context={"approved": True}):
+        return 403, {"error": "not allowed"}
+    if issue["status"] not in ("fix_failed", "disputed"):
+        return 409, {"error": "There is nothing to clear by cleaning."}
+    meta = get(f"HOME#{issue['homeId']}") or {}
+    d = homes.clean_or_skip(issue["homeId"], "dust" if meta.get("isDemo") else None)
+    rupees = round(d["rupees_per_month"])
+    kwh = round(rupees / float(meta.get("tariff", 8)), 1)
+    rec = {"kwh": kwh, "rupees": rupees, "co2_kg": round(kwh * C.CO2_KG_PER_KWH, 1), "by": "cleaning"}
+    put({"PK": "LEDGER", "SK": issue_id, "homeId": issue["homeId"], "at": now_iso(), **rec})
+    _update(issue_id, recovered=rec)
+    _event(issue_id, "cleaned", f"Panels cleaned and output is back. Estimated {kwh} units (₹{rupees}, {rec['co2_kg']} kg CO₂).",
+           status="fixed")
+    _close(issue)
+    token_key = issue.get("fixToken")
+    if token_key:  # the fix check was waiting for the household: it ends here
+        _update(issue_id, fixToken=None)
+        try:
+            sfn.send_task_success(taskToken=token_key, output=json.dumps({"result": "fixed"}))
+        except Exception:  # execution already finished
+            pass
+    return 200, {"ok": True, "status": "fixed", "recovered": rec}
 
 
 def demo_replay_fix(issue_id: str, outcome: str):
@@ -259,21 +410,14 @@ def run_task(e: dict) -> dict:
     if task in ("notify", "rewait"):
         _update(iid, waitToken=e["taskToken"])
         if task == "notify":
-            reopened = bool(e.get("reopened"))
-            meta = get(f"HOME#{issue['homeId']}")
-            ok, err = mail.issue_email(issue["installerEmail"], issue["installerName"], meta.get("name", "a household"),
-                                       f"{issue['summary']} {issue['cause']}", issue["link"], issue["deadlineText"],
-                                       reopened=reopened)
-            _event(iid, "email_sent" if ok else "email_failed",
-                   f"Emailed {issue['installerName']} with the evidence pack and a response link." if ok
-                   else f"Email could not be sent ({err}). The response link still works.")
+            # No message leaves the app: the issue shows up in the installer app, which reads it from the table.
+            note = ("The fix did not bring output back into the expected range, so this issue is open again."
+                    if e.get("reopened") else "Sent to your installer in the SunProof installer app, with the evidence chart.")
+            _event(iid, "sent_to_app", note)
         return {"ok": True}
     if task == "remind":
-        meta = get(f"HOME#{issue['homeId']}")
-        ok, err = mail.reminder_email(issue["installerEmail"], issue["installerName"], meta.get("name", "a household"),
-                                      issue["link"], issue["deadlineText"])
-        _event(iid, "reminder", "Midway reminder sent." if ok else f"Reminder email could not be sent ({err}).")
-        return {"ok": ok}
+        _event(iid, "reminder", f"Midway reminder: still waiting for {issue['installerName']} to reply.")
+        return {"ok": True}
     if task == "escalate":
         _update(iid, escalationDraft=_escalation_draft(issue))
         _event(iid, "escalation_draft", "No reply within the response window. A ready-to-file escalation draft is ready.",

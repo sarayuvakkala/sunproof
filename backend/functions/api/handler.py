@@ -5,12 +5,11 @@ import os
 import re
 from pathlib import Path
 
-from . import homes, issues
+from . import homes, issues, pro
 from .store import to_dynamo  # noqa: F401  (import check at cold start)
 
 REPORT = Path(__file__).resolve().parent.parent / "accuracy" / "report.json"
 DEMO_MODE = os.environ.get("DEMO_MODE", "true") == "true"
-INSTALLER_EMAIL = os.environ.get("INSTALLER_EMAIL", "")
 
 
 def _resp(status: int, body) -> dict:
@@ -43,6 +42,14 @@ def route(method: str, path: str, query: dict, body: dict) -> dict:
     if m and method == "GET":
         return _tuple(issues.issue_view(m[1], query.get("homeId", "")))
 
+    m = re.fullmatch(r"/issues/([^/]+)/revisit", path)
+    if m and method == "POST":
+        return _tuple(issues.revisit(m[1], body.get("homeId", "")))
+
+    m = re.fullmatch(r"/issues/([^/]+)/cleaned", path)
+    if m and method == "POST":
+        return _tuple(issues.cleaned(m[1], body.get("homeId", "")))
+
     m = re.fullmatch(r"/r/([^/]+)", path)
     if m and method == "GET":
         return _tuple(issues.installer_view(m[1]))
@@ -53,6 +60,24 @@ def route(method: str, path: str, query: dict, body: dict) -> dict:
     if m and method == "GET":
         return _tuple(issues.installer_bill(m[1]))
 
+    # Installer app (one fixed demo installer; see pro.py)
+    if path == "/pro/jobs" and method == "GET":
+        return _tuple(pro.list_jobs())
+    m = re.fullmatch(r"/pro/jobs/([^/]+)", path)
+    if m and method == "GET":
+        return _tuple(pro.get_job(m[1]))
+    m = re.fullmatch(r"/pro/jobs/([^/]+)/respond", path)
+    if m and method == "POST":
+        return _tuple(pro.respond(m[1], body))
+    m = re.fullmatch(r"/pro/jobs/([^/]+)/visit-done", path)
+    if m and method == "POST":
+        return _tuple(pro.visit_done(m[1]))
+    m = re.fullmatch(r"/pro/jobs/([^/]+)/trip", path)
+    if m and method == "POST":
+        return _tuple(pro.trip(m[1], body))
+    if path == "/pro/record" and method == "GET":
+        return _tuple(pro.record())
+
     if path == "/recovered" and method == "GET":
         return _resp(200, issues.recovered_total())
     if path == "/accuracy" and method == "GET":
@@ -60,8 +85,10 @@ def route(method: str, path: str, query: dict, body: dict) -> dict:
 
     if DEMO_MODE and path == "/demo/replay-fix" and method == "POST":
         return _tuple(issues.demo_replay_fix(body.get("issueId", ""), body.get("outcome", "fixed")))
+    if DEMO_MODE and path == "/demo/advance-day" and method == "POST":
+        return _tuple(issues.demo_advance_day(body.get("issueId", ""), bool(body.get("manual"))))
     if DEMO_MODE and path == "/demo/reset" and method == "POST":
-        return _resp(200, homes.reset_demo(INSTALLER_EMAIL))
+        return _resp(200, homes.reset_demo())
 
     return _resp(404, {"error": f"no route {method} {path}"})
 

@@ -6,14 +6,6 @@ Parameters:
   AllowedOrigin:
     Type: String
     Default: "*"
-  SenderEmail:
-    Type: String
-    Default: ""
-    Description: SES-verified sender address (set at deploy time, not committed)
-  InstallerEmail:
-    Type: String
-    Default: ""
-    Description: Test installer address for the demo households (set at deploy time, not committed)
   AppUrl:
     Type: String
     Default: "https://main.d1x4u3l99wlpcs.amplifyapp.com"
@@ -35,8 +27,6 @@ Globals:
       Variables:
         TABLE: !Ref Table
         BUCKET: !Ref Bucket
-        SENDER_EMAIL: !Ref SenderEmail
-        INSTALLER_EMAIL: !Ref InstallerEmail
         APP_URL: !Ref AppUrl
         DEMO_TIME_SCALE: !Ref DemoTimeScale
         DEMO_MODE: !Ref DemoMode
@@ -89,9 +79,6 @@ Resources:
               Action: [polly:SynthesizeSpeech]
               Resource: "*"
         - Statement:
-            - Effect: Allow
-              Action: [ses:SendEmail]
-              Resource: "*"
             - Effect: Allow
               Action: [states:StartExecution]
               Resource: !Sub "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:sunproof-issue"

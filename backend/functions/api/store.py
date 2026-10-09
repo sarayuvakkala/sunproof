@@ -14,10 +14,8 @@ BUCKET = os.environ["BUCKET"]
 s3 = boto3.client("s3", region_name=REGION, endpoint_url=f"https://s3.{REGION}.amazonaws.com",
                   config=Config(signature_version="s3v4", s3={"addressing_style": "virtual"}))
 sfn = boto3.client("stepfunctions")
-ses = boto3.client("sesv2")
 polly = boto3.client("polly")
 
-SENDER_EMAIL = os.environ.get("SENDER_EMAIL", "")
 APP_URL = os.environ.get("APP_URL", "").rstrip("/")
 STATE_MACHINE_ARN = os.environ.get("STATE_MACHINE_ARN", "")
 DEMO_TIME_SCALE = float(os.environ.get("DEMO_TIME_SCALE", "1"))  # 1440 => 7 days run in 7 minutes

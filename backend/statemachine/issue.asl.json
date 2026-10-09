@@ -1,5 +1,5 @@
 {
-  "Comment": "SunProof issue: email the installer, wait for a reply (reminder at half time, escalation draft at the deadline), then watch 7 days of generation to confirm the fix.",
+  "Comment": "SunProof issue: send it to the installer app, wait for a reply (reminder at half time, escalation draft at the deadline), then watch 7 days of generation to confirm the fix.",
   "StartAt": "Notify",
   "States": {
     "Notify": {

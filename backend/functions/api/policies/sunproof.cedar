@@ -22,3 +22,19 @@ when { resource.issue == principal.issue && resource.kind == "issue" };
 // The installer never sees the bill or the household's contact details.
 forbid (principal is Installer, action, resource)
 when { ["bill", "household_contact"].contains(resource.kind) };
+
+// The installer app (one fixed demo installer for now) sees only the jobs and the record that belong to that installer:
+// generation data, evidence, issue status and its own record.
+permit (principal is Pro, action == Action::"read", resource)
+when {
+  resource.installer == principal.pro &&
+  ["generation", "evidence", "issue", "record"].contains(resource.kind)
+};
+
+// ...and can reply to those jobs and mark a visit done.
+permit (principal is Pro, action == Action::"respond", resource)
+when { resource.installer == principal.pro && resource.kind == "issue" };
+
+// The installer app never sees the bill or the household's contact details either.
+forbid (principal is Pro, action, resource)
+when { ["bill", "household_contact"].contains(resource.kind) };

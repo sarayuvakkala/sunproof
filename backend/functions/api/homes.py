@@ -13,8 +13,16 @@ from engine.clean_or_skip import DEFAULT_CLEANING_COST, decide, estimate_dust_lo
 from engine.verdict import build_verdict
 from .store import BUCKET, TABLE, from_dynamo, get, polly, presign, put, s3, to_dynamo
 
+MIN_REPLAY_DAYS = 7
 DATA = Path(__file__).resolve().parent.parent / "data"
-DEMO_HOMES = {"demo": ("demo_household.csv", "Demo home"), "demo-sharma": ("demo_sharma.csv", "Sharma ji (demo)")}
+# home id -> (readings file, name, differences from demo_household.json). Mehta ji's repair does not hold: output comes
+# back for 4 days and falls again on day 5 (see replay_next_day).
+DEMO_HOMES = {
+    "demo": ("demo_household.csv", "Demo home", {}),
+    "demo-sharma": ("demo_sharma.csv", "Sharma ji (demo)", {}),
+    "demo-mehta": ("demo_mehta.csv", "Mehta ji (demo)",
+                   {"kw": 4.0, "lat": 26.91, "lon": 75.79, "city": "Jaipur", "fix_outcome": "relapse", "relapse_day": 5}),
+}
 
 
 def readings(home_id: str, days: int = 60) -> pd.DataFrame:
@@ -54,7 +62,7 @@ def verdict_for(home_id: str, days: int = 30):
     replay_from = r.index[r["replay"].fillna(False).astype(bool)].min() if "replay" in r else None
     v.update({"homeId": home_id, "isDemo": bool(meta.get("isDemo")), "label": meta.get("label"),
               "name": meta.get("name"), "activeIssue": meta.get("active_issue"),
-              "installerName": meta.get("installer_name"),
+              "installerName": meta.get("installer_name"), "kw": float(meta["kw"]), "city": meta.get("city", "Delhi"),
               "replayFrom": str(replay_from.date()) if replay_from is not None and not pd.isna(replay_from) else None})
     return v
 
@@ -121,11 +129,11 @@ def delete_readings(home_id: str):
             batch.delete_item(Key={"PK": i["PK"], "SK": i["SK"]})
 
 
-def reset_demo(installer_email: str):
+def reset_demo():
     """Put both demo homes back to their starting state and empty the recovery counter (for re-recording the demo)."""
     import json
     from boto3.dynamodb.conditions import Attr
-    old = TABLE.scan(FilterExpression=Attr("PK").begins_with("ISSUE#") | Attr("PK").begins_with("TOKEN#"),
+    old = TABLE.scan(FilterExpression=Attr("PK").begins_with("ISSUE#") | Attr("PK").begins_with("TOKEN#") | Attr("PK").begins_with("PRO#"),
                      ProjectionExpression="PK, SK")["Items"]
     with TABLE.batch_writer() as batch:
         for r in old:
@@ -137,14 +145,14 @@ def reset_demo(installer_email: str):
                 batch.delete_item(Key={"PK": r["PK"], "SK": r["SK"]})
     meta = json.loads((DATA / "demo_household.json").read_text())
     meta.pop("sharma_variant", None)
-    for home_id, (csv, name) in DEMO_HOMES.items():
+    for home_id, (csv, name, extra) in DEMO_HOMES.items():
         delete_readings(home_id)
         df = pd.read_csv(DATA / csv, index_col="date", parse_dates=True)
         shift = (pd.Timestamp.now(tz="Asia/Kolkata").normalize().tz_localize(None) - pd.Timedelta(1, "D")) - df.index.max()
         df.index = df.index + shift
         write_readings(home_id, df)
-        put({"PK": f"HOME#{home_id}", "SK": "META", **meta, "name": name,
-             "installer_name": "Test installer (demo)", "installer_email": installer_email,
+        put({"PK": f"HOME#{home_id}", "SK": "META", **meta, **extra, "name": name,
+             "installer_name": "Installer", "installer_id": "demo-installer",
              "active_issue": None})
     return {"ok": True, "homes": list(DEMO_HOMES)}
 
@@ -157,3 +165,15 @@ def replay_after_fix(home_id: str, outcome: str = "fixed", days: int = 8):
     if outcome == "still_low":
         base["actual_kwh"] = base["actual_kwh"] * 0.8
     write_readings(home_id, base, replay=True)
+
+
+def replay_next_day(home_id: str, meta: dict, day: int):
+    """Demo: add the reading for day `day` (1 to 7) after the fix, one day at a time. The repair holds unless this home is
+    one where it does not (fix_outcome 'relapse'): from relapse_day on, output is 20% under again."""
+    base = pd.read_csv(DATA / "demo_household.csv", index_col="date", parse_dates=True).tail(MIN_REPLAY_DAYS)
+    row = base.iloc[(day - 1) % len(base):(day - 1) % len(base) + 1].copy()
+    row["actual_kwh"] = row["actual_kwh"] * float(meta["kw"]) / 3.0
+    if meta.get("fix_outcome") == "relapse" and day >= int(meta.get("relapse_day", 5)):
+        row["actual_kwh"] = row["actual_kwh"] * 0.8
+    row.index = [readings(home_id, 5).index.max() + pd.Timedelta(1, "D")]
+    write_readings(home_id, row, replay=True)

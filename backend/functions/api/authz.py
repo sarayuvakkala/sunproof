@@ -12,14 +12,15 @@ def _uid(t: str, i: str) -> dict:
 
 
 def allowed(principal: tuple[str, str], action: str, kind: str, home: str = "", issue: str = "",
-            context: dict | None = None) -> bool:
-    """principal: ("Household", homeId) or ("Installer", issueId). kind: generation | evidence | issue | bill | ..."""
+            context: dict | None = None, installer: str = "") -> bool:
+    """principal: ("Household", homeId), ("Installer", issueId) or ("Pro", installerId).
+    kind: generation | evidence | issue | record | bill | ...  `installer` names who the resource belongs to."""
     ptype, pid = principal
-    p_attrs = {"home": pid} if ptype == "Household" else {"issue": pid}
-    rid = f"{kind}:{home or issue}"
+    p_attrs = {"Household": {"home": pid}, "Installer": {"issue": pid}, "Pro": {"pro": pid}}[ptype]
+    rid = f"{kind}:{home or issue or installer}"
     entities = [
         {"uid": _uid(ptype, pid), "attrs": p_attrs, "parents": []},
-        {"uid": _uid("Data", rid), "attrs": {"kind": kind, "home": home, "issue": issue}, "parents": []},
+        {"uid": _uid("Data", rid), "attrs": {"kind": kind, "home": home, "issue": issue, "installer": installer}, "parents": []},
     ]
     request = {
         "principal": f'{ptype}::"{pid}"',
