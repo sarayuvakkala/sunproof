@@ -9,6 +9,7 @@ export interface Job {
   due: number; pct: number; drop: number; seed: number
   replyDays?: number; visit?: { o: number; t: string }; day: number
   ev: Ev[]; noise: number[]; units: number; rs: number; rec: number
+  recRs?: number  // rupees recovered, exactly as the home owner sees them (real jobs only)
   real?: boolean  // comes from the backend (otherwise a sample home)
   trip?: 'on_the_way' | 'arrived'  // visit progress reported by the installer (backend jobs only)
   cleaned?: boolean  // fixed because the home owner cleaned the panels

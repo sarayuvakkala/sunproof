@@ -11,7 +11,7 @@ export function fromApi(a: ProJob): Job {
     replyDays: a.replyDays ?? undefined,
     visit: a.visit?.date ? { o: offOf(a.visit.date), t: a.visit.time || '11:00' } : undefined,
     day: a.state === 'check' ? Math.max(1, a.day) : a.day,
-    ev: [], noise: [], units, rs: units * 8, rec: Math.round(a.recovered?.kwh ?? 0), real: true, trip: a.trip ?? undefined, failed: a.fixFailed, cleaned: a.recovered?.by === 'cleaning',
+    ev: [], noise: [], units, rs: units * 8, rec: Math.round(a.recovered?.kwh ?? 0), recRs: a.recovered?.rupees, real: true, trip: a.trip ?? undefined, failed: a.fixFailed, cleaned: a.recovered?.by === 'cleaning',
   }
 }
 

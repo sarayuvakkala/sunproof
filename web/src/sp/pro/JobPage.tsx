@@ -128,7 +128,7 @@ export function JobPage() {
         <div className="pj-row"><div className="pj-ico pj-fixed" style={{ background: 'var(--card)' }}><Ic n="check" size={24} /></div><div className="pj-sp"><div className="pj-big">{L('Fixed', 'ठीक हुआ')}</div><div className="pj-sm">{j.cleaned ? L('The home owner cleaned the panels and output is back. Dust was the cause.', 'घर के मालिक ने पैनल साफ़ किए और उत्पादन लौट आया। कारण धूल थी।') : L('Output has been back in range for 7 days.', 'उत्पादन 7 दिन से सामान्य है।')}</div></div></div>
         <div className="pj-facts">
           <div className="pj-fact"><b className="pj-num" style={{ color: 'var(--ok)' }}>{j.rec}</b><span>{L('units recovered', 'यूनिट वापस')}</span></div>
-          <div className="pj-fact"><b className="pj-num" style={{ color: 'var(--ok)' }}>₹{Math.round(j.rec * 8)}</b><span>{L('saved', 'बचे')}</span></div>
+          <div className="pj-fact"><b className="pj-num" style={{ color: 'var(--ok)' }}>₹{j.recRs ?? Math.round(j.rec * 8)}</b><span>{L('saved', 'बचे')}</span></div>
           <div className="pj-fact"><b className="pj-num" style={{ color: 'var(--ok)' }}>{Math.round(j.rec * 0.705 * 10) / 10}</b><span>kg CO₂</span></div>
         </div>
       </div>
