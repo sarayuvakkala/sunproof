@@ -7,6 +7,9 @@ import { HomeTab } from './sp/HomeTab'
 import { ImpactTab } from './sp/ImpactTab'
 import { InstallerTab } from './sp/InstallerTab'
 import { Launch } from './sp/Launch'
+import { ProShell } from './sp/ProShell'
+import { JobPage } from './sp/pro/JobPage'
+import { ProJobs, ProRecord, ProVisits } from './sp/ProTabs'
 import { Shell } from './sp/Shell'
 
 export default function App() {
@@ -23,6 +26,13 @@ export default function App() {
             <Route path="cleaning" element={<CleaningTab />} />
             <Route path="impact" element={<ImpactTab />} />
             <Route path="accuracy" element={<AccuracyPage />} />
+          </Route>
+          <Route path="/pro" element={<ProShell />}>
+            <Route index element={<Navigate to="jobs" replace />} />
+            <Route path="jobs" element={<ProJobs />} />
+            <Route path="jobs/:id" element={<JobPage />} />
+            <Route path="visits" element={<ProVisits />} />
+            <Route path="record" element={<ProRecord />} />
           </Route>
           <Route path="/accuracy" element={<Navigate to="/app/accuracy" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
