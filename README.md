@@ -2,9 +2,11 @@
 
 An independent audit and fix-tracking service that recovers lost clean energy from household rooftop solar.
 
-Built for **WeMakeDevs Environmental Hacks** (Waste and Energy track), Oct 8–11, 2026.
+Built for **WeMakeDevs Environmental Hacks** (Waste and Energy track), Oct 8–11, 2026, by Sarayu Vakkalagadda and Deepak Pydipamula.
 
-> **Demo data:** the households in this repo are **demo households built from public plant data, not real homes**. Real household and US rooftop checks are listed under "Next steps".
+**Try it live:** [home owner app](https://main.d1x4u3l99wlpcs.amplifyapp.com/) · [installer app](https://main.d1x4u3l99wlpcs.amplifyapp.com/pro) (open both side by side, no sign-up)
+
+> **Demo data:** the two households, Sharma ji (the fix holds) and Mehta ji (the fix fails on day 5), are **demo households built from public plant data, not real homes**. Real household and US rooftop checks are listed under "Next steps".
 
 ## The problem
 
@@ -27,7 +29,8 @@ SunProof finds lost clean generation, gets the problem to the responsible party 
 | **Clean or skip** | Uses the rain forecast and estimated dust loss to say whether cleaning pays, or "Skip, rain on Sunday". |
 | **Send to my installer** | The household approves, then the issue appears live in the installer app with an evidence chart and one-tap replies (book a visit, fixed remotely, not a system issue). |
 | **Follow up** | A Step Functions workflow tracks a 7-day response window, sends a reminder at half time, and drafts an escalation for the household to file if there is no reply. |
-| **Verify the fix** | After the installer replies, SunProof checks the next 7 days of generation. Back in range closes the issue as **Fixed ✅** and adds to the **clean energy recovered** counter. Still low reopens it with the installer. |
+| **Verify the fix** | After the installer's fix, SunProof watches the next 7 days of real output. A day passes if it reaches the bottom of the expected range (P10). Two low days in a row fail the fix: straight away it reopens with the installer, later it counts as a relapse. After 7 days, the week's total must reach the expected minimum. Only then is it **Fixed ✅**, and only the improvement counts towards **clean energy recovered**. |
+| **When the fix doesn't hold** | The home owner sees the likely reasons (dust, or a repair that needs a second look) and chooses: clean the panels or ask for a revisit. If cleaning brings output back, the job closes as **Fixed by cleaning** on both sides. |
 | **Who sees what** | [Cedar](https://www.cedarpolicy.com/) policies: the installer sees generation data and evidence, never the bill or contact details, and nothing is sent without the household's approval. |
 | **Published accuracy** | A blind fault-injection test on real Indian plant data (see below). |
 
@@ -74,17 +77,17 @@ Reproduce it: `python -m accuracy.run_kaggle` writes `accuracy/report.json` dete
 - **CO₂ factor:** 0.705 kg CO₂ per kWh, combined margin, [CEA CO₂ Baseline Database v22.0](https://cea.nic.in/wp-content/uploads/baseline/2026/09/User_Guide__Version_22.0.pdf), FY 2025-26.
 - **Tariff:** ₹8 per unit default (Delhi domestic, upper slab with surcharge), editable per household.
 - **Weather and rain:** [Open-Meteo](https://open-meteo.com/), free for non-commercial use. That suits a hackathon, not a paid rollout.
-- **Soiling:** average loss of 7.6% a month from a Delhi field test; the source needs citing before this is relied on.
+- **Soiling:** an average loss of 7.6% a month without cleaning, from a Delhi field study. It is a default estimate, not measured on each roof.
 
 ## Limits, stated honestly
 
 - **Verdicts are ranges, not accusations.** A weather model gives a range, not a precise number, so every verdict and installer message says "worth checking".
 - **Trips are not caught the same day.** A stopped system shows up in the daily check as a large shortfall, not as an instant alert.
 - **The escalation is a draft.** SunProof does not file anything with any government system.
-- **Fix verification in the demo uses replayed data**, labelled REPLAY.
+- **The demo speeds up time.** In the demo, **Next day ▸** steps through the 7-day check one day at a time using the demo household's data; in a real rollout each day is a real day.
 - **Demo installer:** the installer app has no sign-in yet. It acts as one fixed demo installer, labelled "Installer". Real installer sign-in is a next step.
 - **Demo clock:** `DEMO_TIME_SCALE` shortens the 7-day window for demos (1 = real time).
-- **Demo endpoints:** `/demo/reset` and `/demo/replay-fix` are unauthenticated and exist for the demo. Turn them off with `DemoMode=false` when deploying.
+- **Demo endpoints:** `/demo/reset`, `/demo/advance-day` and `/demo/replay-fix` are unauthenticated and exist for the demo. Turn them off with `DemoMode=false` when deploying.
 - **No household login.** The demo has no sign-in: anyone who knows a home's ID can read its verdict, and the household screen is not access-controlled. This is safe here only because every home is a public-data demo. The Cedar rules do enforce the installer side (the installer sees generation data and evidence only, never the bill or contact details) and the household's approval before anything is sent. A real rollout needs household sign-in (for example Amazon Cognito), per-home ownership, and a way to add a home and its readings. That is the first next step.
 - **Bill check and warranty reminder** are not built.
 - **No email or SMS.** Messages stay inside the app. SMS in India needs DLT registration, and email is a possible next step.
@@ -122,7 +125,7 @@ engine/      expected output (pvlib), detector, verdict, clean-or-skip, evidence
 accuracy/    fault injector, Kaggle accuracy run, demo household builder, report.json
 backend/     SAM template, API Lambda, Step Functions definition, Cedar policies
 web/         React + Vite + Tailwind app (household, installer, accuracy pages)
-docs/        API contract, module specs, architecture diagram, demo script, handoff notes
+docs/        API contract, module specs, architecture diagram, handoff notes
 ```
 
 ## Licence
