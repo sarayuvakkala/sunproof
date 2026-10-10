@@ -8,6 +8,11 @@ Built for **WeMakeDevs Environmental Hacks** (Waste and Energy track), Oct 8–1
 
 > **Demo data:** the two households, Sharma ji (the fix holds) and Mehta ji (the fix fails on day 5), are **demo households built from public plant data, not real homes**. Real household and US rooftop checks are listed under "Next steps".
 
+| Is my solar working? | Who fixes it? | Did the fix really work? | When it doesn't hold |
+|:---:|:---:|:---:|:---:|
+| <img src="docs/screenshots/home.jpg" width="200" alt="Home owner app: today's output against expected, and units, rupees and CO2 lost"> | <img src="docs/screenshots/installer-reply-options.jpg" width="200" alt="Installer app on a phone: one-tap replies to a new job"> | <img src="docs/screenshots/fixed-proven.jpg" width="200" alt="Fixed, proven by seven days of real output"> | <img src="docs/screenshots/fix-didnt-hold.jpg" width="200" alt="Mehta ji: the fix didn't hold, with the two likely reasons"> |
+| Home owner app | Installer app | 7 good days, then **Fixed** | Mehta ji's relapse on day 5 |
+
 ## The problem
 
 After a rooftop system is installed, three parties can each cost the household money, and the household has no independent way to tell which one:
@@ -53,6 +58,8 @@ On the original, untouched data the same method also spots two real Plant 1 inve
 - Catching a stopped system is easy because output is zero. The 20% drop and dust results are the meaningful ones.
 - Plant 2's output swings about 27% around its own sunlight sensor on every inverter, so it is **not used for headline accuracy**. We report it separately.
 - Not yet tested on real Indian rooftops or US residential systems (NREL PVDAQ). Next step.
+
+<img src="docs/screenshots/accuracy.jpg" width="260" alt="The accuracy report in the app: 130 of 138 hidden faults caught">
 
 Reproduce it: `python -m accuracy.run_kaggle` writes `accuracy/report.json` deterministically (fixed seed).
 
