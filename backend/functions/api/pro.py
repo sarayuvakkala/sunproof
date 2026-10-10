@@ -75,7 +75,9 @@ def _check_day(issue: dict) -> int:
 
 
 def _weeks(issue: dict) -> int:
-    days = (datetime.fromisoformat(issue["periodEnd"]) - datetime.fromisoformat(issue["periodStart"])).days + 1
+    """How long the drop has lasted, in weeks (older issues without dropDays fall back to the whole period)."""
+    days = int(issue.get("dropDays") or 0) or \
+        (datetime.fromisoformat(issue["periodEnd"]) - datetime.fromisoformat(issue["periodStart"])).days + 1
     return max(1, round(days / 7))
 
 
@@ -86,7 +88,8 @@ def job_of(issue: dict, meta: dict, now: datetime) -> dict:
         "issueId": issue["issueId"], "homeId": issue["homeId"], "name": meta.get("name") or "Home", "kw": meta.get("kw"),
         "city": meta.get("city", "Delhi"), "state": state, "overdue": overdue, "status": issue["status"],
         "daysLeft": days_left(issue, now) if state == "new" else None, "deadlineText": issue["deadlineText"],
-        "pctBelow": issue.get("pctBelow", 0), "weeks": _weeks(issue), "unitsLost": round(issue["unitsLost"]),
+        "pctBelow": issue.get("pctBelow", 0), "weeks": _weeks(issue), "dropDays": int(issue.get("dropDays") or 0), "dropStart": issue.get("dropStart"),
+        "unitsLost": round(issue["unitsLost"]),
         "visit": issue.get("visit") if state in ("visit", "check") and issue.get("visit", {}).get("date") else None,
         "day": 7 if state == "fixed" else (_check_day(issue) if state == "check" else 0),
         "recovered": rec, "replyDays": reply_days(issue), "created": issue["created"],

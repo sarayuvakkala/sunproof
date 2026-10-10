@@ -94,13 +94,13 @@ def start_issue(home_id: str, approved: bool):
     s3.put_object(Bucket=BUCKET, Key=chart_key, Body=png, ContentType="image/png")
 
     installer_id = meta.get("installer_id", DEMO_INSTALLER_ID)
-    pct = round(100 * (1 - v["ratio"])) if v.get("ratio") else 0
+    pct = v.get("pct_below") or (round(100 * (1 - v["ratio"])) if v.get("ratio") else 0)
     link = f"{APP_URL}/r/{token}"
     put({"PK": f"ISSUE#{issue_id}", "SK": "META", "issueId": issue_id, "homeId": home_id, "status": "sent",
          "created": now_iso(), "deadline": deadline.isoformat(timespec="seconds"), "deadlineText": _fmt(deadline),
          "token": token, "link": link, "summary": summary, "cause": cause, "evidenceKey": chart_key,
          "unitsLost": v["units_lost"], "rupeesLost": v["rupees_lost"], "co2Kg": v["co2_kg"],
-         "installerId": installer_id, "pctBelow": pct,
+         "installerId": installer_id, "pctBelow": pct, "dropStart": v.get("drop_start"), "dropDays": v.get("drop_days", 0),
          "periodStart": v["period"]["start"], "periodEnd": v["period"]["end"],
          "timeline": [{"at": now_iso(), "event": "created", "note": "Household approved and sent the issue."}],
          "installerName": meta.get("installer_name", "Installer")})

@@ -73,5 +73,9 @@ def _result(status: str, df: pd.DataFrame, tariff: float, units: float, days: in
             for d, r in df.iterrows()
         ],
         "message": {lang: MESSAGES[status][lang].format(**vals) for lang in ("en", "hi")},
+        # The drop itself, so every screen quotes the same numbers: % below expected on the low days, when it began, how long.
+        "pct_below": round(pct),
+        "drop_start": str(df.index[df["flag"].notna()].min().date()) if "flag" in df and df["flag"].notna().any() else None,
+        "drop_days": int(df["flag"].notna().sum()) if "flag" in df else 0,
         "assumptions": {"tariff_inr_per_kwh": tariff, "co2_kg_per_kwh": C.CO2_KG_PER_KWH, "co2_source": C.CO2_SOURCE},
     }
