@@ -1,9 +1,9 @@
 # Module specs
 
-**Status (Thu Oct 8): all five modules are built, tested and live.** They were built by Sarayu, solo, so the "partner" labels from the original split are now "built". The specs below are kept so anyone can pick a module up from this page alone; where the built version differs from the first spec, the text has been updated.
+**Status: all five modules are built, tested and live.** The specs below are kept so anyone can pick a module up from this page alone; where the built version differs from the first spec, the text has been updated.
 Raw data lives **outside the repo**. Set `SUNPROOF_DATA=~/datasets/kaggle-solar` (contains the 4 Kaggle CSVs).
 
-Shared interface (owned by Sarayu, in `engine/detect.py`):
+Shared interface (in `engine/detect.py`):
 ```python
 detect(daily: pd.DataFrame) -> pd.DataFrame
 # in:  columns date, expected_kwh, actual_kwh   (one row per day, one system)
@@ -83,8 +83,5 @@ render(daily: pd.DataFrame, title: str) -> bytes   # PNG
 
 ---
 
-## Also built (not in the original split)
+## Also built
 - `engine/expected.py`, `engine/verdict.py`, `engine/verify_fix.py` and the whole `backend/` (API, Step Functions, Cedar). See `docs/api.md`.
-
-## Handoff
-At the end of each day, add 3 lines to `docs/handoff.md`: **done / half-done / next**.

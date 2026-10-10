@@ -1,5 +1,4 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
-import { Installer } from './pages/Installer'
 import { AccuracyPage } from './sp/AccuracyPage'
 import { CleaningTab } from './sp/CleaningTab'
 import { Frame } from './sp/Frame'
@@ -16,7 +15,6 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/r/:token" element={<Installer />} />
         <Route element={<Frame />}>
           <Route path="/" element={<Launch />} />
           <Route path="/app" element={<Shell />}>

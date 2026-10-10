@@ -132,7 +132,7 @@ engine/      expected output (pvlib), detector, verdict, clean-or-skip, evidence
 accuracy/    fault injector, Kaggle accuracy run, demo household builder, report.json
 backend/     SAM template, API Lambda, Step Functions definition, Cedar policies
 web/         React + Vite + Tailwind app (household, installer, accuracy pages)
-docs/        API contract, module specs, architecture diagram, handoff notes
+docs/        API contract, module specs, architecture diagram, screenshots
 ```
 
 ## Licence
