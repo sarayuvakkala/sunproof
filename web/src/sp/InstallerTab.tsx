@@ -101,7 +101,7 @@ function Evidence({ v }: { v: Verdict }) {
   const x = (k: number) => (k * 280) / (rows.length - 1)
   const first = rows.findIndex((r) => r.flag !== null)
   const flagged = rows.filter((r) => r.flag !== null).length
-  const pct = Math.max(0, Math.round((1 - v.actual_kwh / (v.expected_kwh || 1)) * 100))
+  const pct = v.pct_below ?? Math.max(0, Math.round((1 - v.actual_kwh / (v.expected_kwh || 1)) * 100))
   const home = (v.name ?? 'Sharma ji').replace(/\s*\(demo\)\s*$/i, '')
   const dur = flagged >= 7 ? t(`${Math.max(1, Math.round(flagged / 7))} wks`) : t(`${Math.max(1, flagged)} days`)
   return (
@@ -416,7 +416,7 @@ function FixedView({ issue, onImpact }: { issue: Issue; onImpact: () => void }) 
       <Card style={{ borderColor: '#22c55e' }}>
         <div className="h">{t(byCleaning ? 'Fixed by cleaning' : 'Fixed, proven by data')}</div>
         {byCleaning
-          ? <div className="sm mut">{t('Dust was the cause. Your installer sees this as fixed too.')} <span className="rtag">{t('Estimated')}</span></div>
+          ? <div className="sm mut" style={{ paddingRight: 130 }}>{t('Dust was the cause. Your installer sees this as fixed too.')} <span className="rtag">{t('Estimated')}</span></div>
           : <><div className="sm mut">{t('7 of 7 days back in range')} <span className="rtag">{t('REPLAY')}</span></div><Days n={7} /></>}
         {r && (
           <div className="stats" style={{ marginTop: 12 }}>

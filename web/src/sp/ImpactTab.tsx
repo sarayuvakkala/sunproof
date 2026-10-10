@@ -97,7 +97,7 @@ export function ImpactTab() {
   if (!U) {
     const openI = !['fix', 'dis'].includes(view) && (issue !== null || v.status === 'shortfall' || v.status === 'trip')
     const dust = view === 'dis' || d?.decision === 'clean'
-    const low = v.expected_kwh > 0 ? Math.max(1, Math.round((v.units_lost / v.expected_kwh) * 100)) : 15  // real shortfall, not a fixed number
+    const low = v.pct_below || (v.expected_kwh > 0 ? Math.max(1, Math.round((v.units_lost / v.expected_kwh) * 100)) : 15)  // the same % every screen quotes
     const msg = openI
       ? t('Your output is about 15% low. Fix it with your installer to start recovering clean energy.').replace('15%', `${low}%`)
       : view === 'dis' ? 'Your installer says it is not the system. Dust is the likely cause, so clean the panels.' : 'Nothing to recover right now.'

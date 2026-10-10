@@ -39,7 +39,7 @@ export function AccuracyPage() {
           <svg width="100" height="100" viewBox="0 0 104 104" style={{ flex: '0 0 auto' }} aria-hidden>
             <circle cx="52" cy="52" r="44" fill="none" stroke="rgba(255,255,255,.12)" strokeWidth="10" />
             <circle cx="52" cy="52" r="44" fill="none" stroke="#f5b300" strokeWidth="10" strokeLinecap="round" strokeDasharray={C} strokeDashoffset={on ? C * (1 - n.caught / n.inj) : C} transform="rotate(-90 52 52)" style={{ transition: 'stroke-dashoffset 1.4s cubic-bezier(.2,.8,.2,1)' }} />
-            <text x="52" y="58" textAnchor="middle" fontSize="24" fontWeight="900" fill="#fff"><Ticker value={n.pct} />%</text>
+            <text x="52" y="58" textAnchor="middle" fontSize="24" fontWeight="900" fill="#fff">{n.pct}%</text>
           </svg>
           <div>
             <div style={{ fontSize: 12, opacity: 0.75 }}>{t('Hidden faults caught')}</div>

@@ -98,7 +98,7 @@ export function RecordTab() {
       </div>
 
       <div className="pj-rkc" key={`c${period}`}>
-        <div className="pj-rknm">Sharma Solar Services</div>
+        <div className="pj-rknm">Surya Solar Services</div>
         <div className="pj-rkbig pj-num" ref={bigRef}>{bigF}<small> {L(`of ${st.n} fixes`, `${st.n} में से सुधार`)}</small></div>
         <div className="pj-rkcap">{L('confirmed by real output data: back in range for 7 days', 'असली उत्पादन डेटा से पुष्ट: 7 दिन सामान्य रहा')}</div>
         <div className="pj-rkstars" aria-label={L('4 out of 5 stars', '5 में से 4 स्टार')}>{[0, 0, 0, 0, 1].map((o, i) => <span key={i} style={{ display: 'contents' }}>{STAR(!!o)}</span>)}</div>

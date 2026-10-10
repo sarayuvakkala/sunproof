@@ -32,6 +32,10 @@ export interface Verdict {
   replayFrom: string | null
   kw?: number
   city?: string
+  /** The drop itself: % below expected on the low days, first low day, and how many low days. */
+  pct_below?: number
+  drop_start?: string | null
+  drop_days?: number
 }
 
 export interface TimelineEvent {
@@ -173,6 +177,7 @@ export interface ProJob {
   issueId: string; homeId: string; name: string; kw: number | null; city: string
   state: 'new' | 'visit' | 'check' | 'fixed' | 'closed'; overdue: boolean; status: IssueStatus
   daysLeft: number | null; deadlineText: string; pctBelow: number; weeks: number; unitsLost: number
+  dropDays?: number; dropStart?: string | null
   visit: { date: string; time: string } | null; day: number
   recovered: { kwh: number; rupees: number; co2_kg: number; by?: string } | null
   replyDays: number | null; created: string; reopened: boolean

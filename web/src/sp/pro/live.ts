@@ -7,7 +7,7 @@ export function fromApi(a: ProJob): Job {
   const due = a.overdue ? Math.min(a.daysLeft ?? -1, -1) : (a.daysLeft ?? 0)
   const units = Math.round(a.unitsLost)
   return {
-    id: a.issueId, name: a.name, kw: a.kw ?? 3, city: a.city, state: a.state, due, pct: a.pctBelow, drop: a.weeks * 7, seed: 0,
+    id: a.issueId, name: a.name, kw: a.kw ?? 3, city: a.city, state: a.state, due, pct: a.pctBelow, drop: a.dropDays || a.weeks * 7, seed: 0,
     replyDays: a.replyDays ?? undefined,
     visit: a.visit?.date ? { o: offOf(a.visit.date), t: a.visit.time || '11:00' } : undefined,
     day: a.state === 'check' ? Math.max(1, a.day) : a.day,
