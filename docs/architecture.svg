@@ -25,7 +25,7 @@
   <text x="109" y="118" text-anchor="middle" class="s">Hindi / English app</text>
   <rect class="box person" x="24" y="400" width="170" height="70"/>
   <text x="109" y="428" text-anchor="middle" class="t">Installer</text>
-  <text x="109" y="448" text-anchor="middle" class="s">installer app: jobs, visits, record</text>
+  <text x="109" y="448" text-anchor="middle" class="s">jobs, visits, record</text>
 
   <!-- amplify -->
   <rect class="box aws" x="250" y="70" width="170" height="70"/>
