@@ -82,7 +82,7 @@ Reproduce it: `python -m accuracy.run_kaggle` writes `accuracy/report.json` dete
 - **Trips are not caught the same day.** A stopped system shows up in the daily check as a large shortfall, not as an instant alert.
 - **The escalation is a draft.** SunProof does not file anything with any government system.
 - **Fix verification in the demo uses replayed data**, labelled REPLAY.
-- **Demo installer:** the installer app has no sign-in yet. It acts as one fixed demo installer, labelled "test installer". Real installer sign-in is a next step.
+- **Demo installer:** the installer app has no sign-in yet. It acts as one fixed demo installer, labelled "Installer". Real installer sign-in is a next step.
 - **Demo clock:** `DEMO_TIME_SCALE` shortens the 7-day window for demos (1 = real time).
 - **Demo endpoints:** `/demo/reset` and `/demo/replay-fix` are unauthenticated and exist for the demo. Turn them off with `DemoMode=false` when deploying.
 - **No household login.** The demo has no sign-in: anyone who knows a home's ID can read its verdict, and the household screen is not access-controlled. This is safe here only because every home is a public-data demo. The Cedar rules do enforce the installer side (the installer sees generation data and evidence only, never the bill or contact details) and the household's approval before anything is sent. A real rollout needs household sign-in (for example Amazon Cognito), per-home ownership, and a way to add a home and its readings. That is the first next step.
